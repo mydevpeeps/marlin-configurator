@@ -19,6 +19,7 @@ The _intent_ is to have the user community contribute their .json files to the r
 ## Command-Line Parameters
 - `--git-reset` _Performs **git reset --hard** before running. Default is false._
 - `--configonly` _Runs the configuration modifications but does not compile it. Default is false._
+- `--preferargs` _If there is a value conflict between the JSON config and a parameter, this will use the value of the parameter. Default is to throw an error._
 - `--upgradeio` _Runs the 'upgrade' and 'update' options for PlatformIO prior to compiling. Default is false. **NOT Recommended**_
 - `--silent` _Supresses all of the noise during the configuration phase. Default is false._
 - `--config <file>` _JSON configuration file to use. Default is none which uses what is in Marlin-Root._
@@ -26,7 +27,7 @@ The _intent_ is to have the user community contribute their .json files to the r
 - `--buildargs arguments` _Additional arguments to pass to the PlatformIO build. **This should always be the last parameter sent.**_
 
 ## JSON File Sections
-- `settings` _not used yet. will replace defaults.._
+- `settings` _default configuration for the environment when not using command-line parameters._
 - `useExample` _which example configuration to use and which files to copy._
 - `options` _directives adjusted in Configuration.h and Configuration_Adv.h._
   
