@@ -1,7 +1,7 @@
 # build-marlin
 PowerShell Build Script for Marlin Configurations
 
-_ Concept originally imagined by https://github.com/The-EG _
+_Concept originally imagined by https://github.com/The-EG_
 
 ## Changes to Marin Configuration Directives
 Marlin is constantly adding, removing, and changing directives in the configuration files. Even within the same bugfix branch between releases these can change. It is up to the user to be aware of and maintain these options. Not all of the directives are in the Marlin Configuration (.h) files and there are definately some that are valid to be added (such as a PIN reference for a feature). 
