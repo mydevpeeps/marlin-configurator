@@ -214,6 +214,7 @@ if ($silent) {
     $PSDefaultParameterValues["Disable-MarlinConfigOption:silent"] = $true
 }
 
+# reset git if requested
 if ( $GitResetHard ) {
     Write-Warning "Resetting the Marlin sources at $MarlinRoot"
     Push-Location -Path $MarlinRoot
@@ -221,6 +222,7 @@ if ( $GitResetHard ) {
     Pop-Location
 }
 
+# if we are using a config file than parse it for config changes
 if ($useconfig) {
     if ( -not (Test-Path -Path $ConfigFile)) {
         throw "$ConfigFile not found"
