@@ -17,14 +17,19 @@ There is an example.json included in this repo. Eventually we will write a parse
 The _intent_ is to have the user community contribute their .json files to the repo. The directory structure will mimick that of the Marlin Configurations repo.
 
 ## Command-Line Parameters
-- --git-reset (true|false) _Performs 'git reset --hard' before running. Default is false_
-- --configonly (true|false) _Runs the configuration modifications but does not compile it. Default is false_
-- --upgradeio (true|false) _Runs the 'upgrade' and 'update' options for PlatformIO prior to compiling. Default is false. **NOT Recommended**_
-- --silent (true|false) _Supresses all of the noise during the configuration phase. Default is false._
-- --config <file> _JSON configuration file to use. Default is none which uses what is in Marlin-Root._
-- --marlin-root <path> _Path where your Marlin Root Repo exists for this build. Default is local directory._
-- --buildargs arguments _Additional arguments to pass to the PlatformIO build. **This should always be the last parameter sent.**_
+- `--git-reset` _Performs **git reset --hard** before running. Default is false._
+- `--configonly` _Runs the configuration modifications but does not compile it. Default is false._
+- `--upgradeio` _Runs the 'upgrade' and 'update' options for PlatformIO prior to compiling. Default is false. **NOT Recommended**_
+- `--silent` _Supresses all of the noise during the configuration phase. Default is false._
+- `--config <file>` _JSON configuration file to use. Default is none which uses what is in Marlin-Root._
+- `--marlin-root <path>` _Path where your Marlin Root Repo exists for this build. Default is local directory._
+- `--buildargs arguments` _Additional arguments to pass to the PlatformIO build. **This should always be the last parameter sent.**_
 
+## JSON File Sections
+- `config` _not used yet. will replace defaults._
+- `useExample` _which example configuration to use and which files to copy._
+- `options` _directives adjusted in Configuration.h and Configuration_Adv.h._
+  
 ## Requirements
 - Windows Computer Running PowerShell 6.0 or higher.
 - PlatformIO already installed and configured. 
