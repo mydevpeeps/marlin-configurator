@@ -1,11 +1,11 @@
 {
-"config": {
-    "marlin-root": "D\\:\\localadmin\\Documents\\marlin_build\\Git-Marlin\\Marlin",
-    "buildargs": "--silent",
-    "upgradeio": false,
-    "git-reset": false,
-    "configonly": false,
-    "silent": false
+"settings": {
+    "upgradeio" : false,
+    "gitreset" : false,
+    "configonly" : false,
+    "silent" : false,
+    "buildargs" : "--silent",
+    "marlinroot" : "D:\\localadmin\\Documents\\marlin_build\\Git-Marlin\\Marlin"
     },
 "useExample": {
   "branch": "bugfix-2.0.x",
@@ -33,7 +33,6 @@
   "DEFAULT_bedKd" : "617.69",
   "THERMAL_PROTECTION_HYSTERESIS" : "4",
   "WATCH_TEMP_PERIOD" : "40",
-  "THERMAL_PROTECTION_BED_HYSTERESIS" : "2",
   "THERMAL_PROTECTION_BED_HYSTERESIS" : "2",
 
   "X_DRIVER_TYPE" : "TMC2208_STANDALONE",

@@ -1,6 +1,6 @@
 #
 # marlin-build.ps1
-# See github for info: 
+# See github for info: https://github.com/mydevpeeps/build-marlin
 #
 
 # we require powershell 6.0 or higher to run
@@ -8,18 +8,27 @@ if ($host.version.major -lt 6) {
     throw "This script requires PowerShell version 6.0 or higher"
 }
 
-# global vars
+# Platform IO Environment
+$PIOVENV = "$env:USERPROFILE\.platformio\penv"
+. "$PIOVENV\scripts\Activate.ps1"
+
+# global defaults
+$ConfigFile=""
+$MarlinRoot = "."
+$buildargs = ""
 $GitResetHard=$false
 $upgradeio = $false
 $configonly = $false
 $useconfig = $false
+$preferargs = $false
 $silent = $false
-$MarlinRoot = "."
-$ConfigFile=""
-$buildargs = "--silent"
-$PIOVENV = "$env:USERPROFILE\.platformio\penv"
+$release = "0.1"
+#$has_args = $false
 
-. "$PIOVENV\scripts\Activate.ps1"
+#intro
+Write-Output ""
+Write-Output "marlin-build.ps1 v$release Copyright 2021"
+Write-Output ""
 
 # pulls the example marlin config
 function Get-MarlinExampleConfig {
@@ -34,8 +43,9 @@ function Get-MarlinExampleConfig {
         [string]$MarlinRoot = "."
     )
 
+    if (-not $silent)  { Write-Output "   Example Config $ExamplePath from $Branch" }
     foreach($file in $Files) {
-        Write-Output "Using $file from $Branch example $ExamplePath"
+        if (-not $silent)  { Write-Output "    Downloading $file" }
         $ProgressPreference = 'SilentlyContinue'
         Invoke-WebRequest `
          -Uri "https://raw.githubusercontent.com/MarlinFirmware/Configurations/$Branch/config/examples/$ExamplePath/$file" `
@@ -57,7 +67,7 @@ function Enable-MarlinConfigOption {
     $Conf = Get-Content "$MarlinRoot\Marlin\Configuration.h"    
 
     if ( ($Conf -match "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$").Length -ne 0 ) {
-        if (-not $silent) {Write-Output "Configuration option enabled: $Option"}
+        if (-not $silent)  { Write-Output "      Configuration option enabled: $Option" }
         $NewConf = $Conf -replace "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$", "`$1`$3#define $Option`$4"
         Set-Content -Path "$MarlinRoot\Marlin\Configuration.h" -Value $NewConf
         return
@@ -66,7 +76,7 @@ function Enable-MarlinConfigOption {
     $Conf = Get-Content "$MarlinRoot\Marlin\Configuration_adv.h"
 
     if ( ($Conf -match "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$").Length -ne 0 ) {
-        if (-not $silent) {Write-Output "Advanced configuration option enabled: $Option"}
+        if (-not $silent) { Write-Output "      Advanced configuration option enabled: $Option" }
         $NewConf = $Conf -replace "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$", "`$1`$3#define $Option`$4"
         Set-Content -Path "$MarlinRoot\Marlin\Configuration_adv.h" -Value $NewConf
         return
@@ -88,7 +98,7 @@ function Disable-MarlinConfigOption {
     $Conf = Get-Content "$MarlinRoot\Marlin\Configuration.h"    
 
     if ( ($Conf -match "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$").Length -ne 0 ) {
-        if (-not $silent) { Write-Output "Configuration option disabled: $Option"}
+        if (-not $silent) { Write-Output "      Configuration option disabled: $Option"}
         $NewConf = $Conf -replace "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$", "`$1//`$3#define $Option`$4"
         Set-Content -Path "$MarlinRoot\Marlin\Configuration.h" -Value $NewConf
         return
@@ -97,7 +107,7 @@ function Disable-MarlinConfigOption {
     $Conf = Get-Content "$MarlinRoot\Marlin\Configuration_adv.h"
 
     if ( ($Conf -match "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$").Length -ne 0 ) {
-        if (-not $silent) {Write-Output "Advanced configuration option disabled: $Option"}
+        if (-not $silent) {Write-Output "      Advanced configuration option disabled: $Option"}
         $NewConf = $Conf -replace "^(\s*)(\/\/)?(\s*)#define $Option(\s*\/\/.*)?$", "`$1//`$3#define $Option`$4"
         Set-Content -Path "$MarlinRoot\Marlin\Configuration_adv.h" -Value $NewConf
         return
@@ -135,7 +145,7 @@ function Set-MarlinConfigOption {
     $Conf = Get-Content "$MarlinRoot\Marlin\Configuration.h"    
 
     if ( ($Conf -match "^(\s*)(\/\/)?(\s*)#define $Option (.*?)(\s*\/\/.*)?$").Length -ne 0 ) {
-        if (-not $silent) {Write-Output "Configuration option set: $Option -> $Value"}
+        if (-not $silent) {Write-Output "      Configuration option set: $Option -> $Value"}
         $NewConf = $Conf -replace "^(\s*)(\/\/)?(\s*)#define $Option (.*?)(\s*\/\/.*)?$", "`$1`$3#define $Option $Value`$5"
         Set-Content -Path "$MarlinRoot\Marlin\Configuration.h" -Value $NewConf
         return
@@ -144,34 +154,44 @@ function Set-MarlinConfigOption {
     $Conf = Get-Content "$MarlinRoot\Marlin\Configuration_adv.h"
 
     if ( ($Conf -match "^(\s*)(\/\/)?(\s*)#define $Option (.*?)(\s*\/\/.*)?").Length -ne 0 ) {
-        if (-not $silent) {Write-Output "Advanced configuration option set: $Option -> $Value"}
+        if (-not $silent) {Write-Output "      Advanced configuration option set: $Option -> $Value"}
         $NewConf = $Conf -replace "^(\s*)(\/\/)?(\s*)#define $Option (.*?)(\s*\/\/.*)?$", "`$1`$3#define $Option $Value`$5"
         Set-Content -Path "$MarlinRoot\Marlin\Configuration_adv.h" -Value $NewConf
         return
     }
 
-    Write-Warning "Option not found, adding: $Option -> $Value"
+    Write-Warning "   Option not found, adding: $Option -> $Value"
     Add-MarlinConfigOption -MarlinRoot $MarlinRoot -Option $Option -Value $Value
 }
 
 # get all the command-line args
 for ( $i = 0; $i -lt $args.count; $i++) {
+    #$has_args = $true
+    if ( $args[$i] -eq "--preferargs" ) { 
+        $preferargs = $true 
+        continue
+    }
+
     if ( $args[$i] -eq "--git-reset" ) { 
         $GitResetHard = $true 
         continue
     }
+
     if ( $args[$i] -eq "--configonly" ) { 
         $configonly = $true 
         continue
     }
+
     if ( $args[$i] -eq "--upgradeio" ) { 
         $upgradeio = $true 
         continue
     }
+
     if ( $args[$i] -eq "--silent" ) { 
         $silent = $true 
         continue
     }
+
     if ( $args[$i] -eq "--config" ) {
         if ($i -gt $args.Count -1) {
             throw "You must supply a filename for --config"
@@ -181,18 +201,22 @@ for ( $i = 0; $i -lt $args.count; $i++) {
         $i++
         continue
     }
+
     if ( $args[$i] -eq "--marlin-root" ) {
         if ($i -gt $args.Count -1) {
             throw "You must supply a path for --marlin-root"
         }
+        $arg_MarlinRoot = $args[$i+1]
         $MarlinRoot = $args[$i+1]
         $i++
         continue
     }
+
     if ( $args[$i] -eq "--buildargs" ) {
         if ($i -gt $args.Count -1) {
             throw "You must supply arguments for --buildargs"
         }
+        $arg_buildargs = $args[$i+1]
         $buildargs = $args[$i+1]
         $i++
         continue
@@ -201,13 +225,13 @@ for ( $i = 0; $i -lt $args.count; $i++) {
     throw "Unknown option " + $args[$i]
 }
 
-# default function parameter values
+# set the default marlin root build path for functions
 $PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
 $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
 $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
 $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
 
-# enable verbose mode for functions
+# enable silent mode for functions
 if ($silent) {
     $PSDefaultParameterValues["Set-MarlinConfigOption:silent"] = $true
     $PSDefaultParameterValues["Enable-MarlinConfigOption:silent"] = $true
@@ -228,9 +252,69 @@ if ($useconfig) {
         throw "$ConfigFile not found"
     }
 
+     if (-not $silent) { Write-Output "Configuring from $ConfigFile" }
     $Config = (Get-Content -Path $ConfigFile | ConvertFrom-Json -AsHashtable)
 
+    if ($Config.settings) {
+        if (-not $silent) { Write-Output "   Processing JSON Settings ..." }
+        #no conflicts for true/false. All default to false and any true flips to true.
+        if ($config.settings.silent -is [System.Boolean]) { 
+            $json_silent = $config.settings.silent
+            if ($json_silent -eq $true) {
+                $silent = $true
+                $PSDefaultParameterValues["Set-MarlinConfigOption:silent"] = $true
+                $PSDefaultParameterValues["Enable-MarlinConfigOption:silent"] = $true
+                $PSDefaultParameterValues["Disable-MarlinConfigOption:silent"] = $true
+            }
+            if (-not $silent) { Write-Output "      Silent Mode : $silent" }
+        }
+        if ($config.settings.upgradeio -is [System.Boolean]) { 
+            $json_upgradeio = $config.settings.upgradeio
+            if ($json_upgradeio -eq $true) {
+                $upgradeio = $true
+            }
+            if (-not $silent) { Write-Output "      Upgrade IO : $upgradeio" }
+        }
+        if ($config.settings.gitreset -is [System.Boolean]) { 
+            $json_gitreset = $config.settings.gitreset
+            if ($json_gitreset -eq $true) {
+                $GitResetHard = $true
+            }
+            if (-not $silent) { Write-Output "      GIT Hard Reset : $GitResetHard" }
+        }
+        if ($config.settings.configonly -is [System.Boolean]) { 
+            $json_configonly = $config.settings.configonly
+            if ($json_configonly -eq $true) {
+                $configonly = $true
+            }
+            if (-not $silent) { Write-Output "      Config Only : $configonly" }
+        }
+        if ($config.settings.buildargs) { 
+            $json_buildargs = $config.settings.buildargs 
+            if (-not $silent) { Write-Output "      PlatformIO Build Args [JSON]: $json_buildargs" }
+            if (-not $silent) { Write-Output "      PlatformIO Build Args [ARGS]: $arg_buildargs" }
+        }
+        if ($config.settings.marlinroot) { 
+            $json_marlinroot = $config.settings.marlinroot 
+            if (-not $silent) { Write-Output "      Marlin Root Path [JSON]: $json_marlinroot" }
+            if (-not $silent) { Write-Output "      Marlin Root Path [ARGS]: $arg_marlinroot" }
+            if (-not $json_marlinroot -eq $arg_marlinroot) {
+                if ($preferargs) {
+                    $MarlinRoot = $arg_marlinroot
+                    $PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+                    $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+                    $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+                    $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
+                }
+                else {
+                    throw "Settings Conflict: JSON [marlinroot = $json_marlinroot]; ARGS [--marlin=root $arg_marlinroot]. Use --perferargs to override, don't use --marlinroot, or change the value in the JSON config."
+                }
+            }
+        }
+    }
+    
     if ($Config.useExample) {
+        if (-not $silent) { Write-Output "   Processing JSON Config Example ..." }
         $Branch = "bugfix-2.0.x"
         $Files = @("Configuration.h","Configuration_adv.h","_Bootscreen.h","_Statusscreen.h")
         $Path = $config.useExample.path
@@ -242,7 +326,7 @@ if ($useconfig) {
     }
 
     if ($Config.options) {
-        Write-Output "Configuring from $ConfigFile"
+        if (-not $silent) { Write-Output "   Processing JSON Options ..." }
         foreach ($Option in $Config.options.keys) {
             if ($Config.options[$Option] -is [System.Boolean]) {
                 if ($Config.options[$Option] -eq $true) { Enable-MarlinConfigOption -Option $Option }
