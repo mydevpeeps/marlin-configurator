@@ -1,19 +1,19 @@
 # build-marlin
 PowerShell Build Script for Marlin Configurations
 
-_Concept originally imagined by https://github.com/The-EG_
+_ Concept originally imagined by https://github.com/The-EG _
 
-# Changes to Marin Configuration Directives
+## Changes to Marin Configuration Directives
 Marlin is constantly adding, removing, and changing directives in the configuration files. Even within the same bugfix branch between releases these can change. It is up to the user to be aware of and maintain these options. Not all of the directives are in the Marlin Configuration (.h) files and there are definately some that are valid to be added (such as a PIN reference for a feature). 
 
-# Configurations
+## Configurations
 This code will pull an example from the live Marlin Configurations Repo:
 https://github.com/MarlinFirmware/Configurations
 
-# Examples
+## Examples
 There is an example.json included in this repo. Eventually we will write a parser to automatically traverse the Marlin Configurations Repo and kick out a series of example json files that are identical to the stock examples from Marlin. From there you can add/remove as you see fit.
 
-#Pre-tested Configurations for Marlin Firmware
+## Pre-tested Configurations for Marlin Firmware
 The _intent_ is to have the user community contribute their .json files to the repo. The directory structure will mimick that of the Marlin Configurations repo.
 
 ## Command-Line Parameters
