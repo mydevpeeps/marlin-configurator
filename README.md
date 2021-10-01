@@ -26,7 +26,7 @@ The _intent_ is to have the user community contribute their .json files to the r
 - `--buildargs arguments` _Additional arguments to pass to the PlatformIO build. **This should always be the last parameter sent.**_
 
 ## JSON File Sections
-- `config` _not used yet. will replace defaults._
+- `settings` _not used yet. will replace defaults.._
 - `useExample` _which example configuration to use and which files to copy._
 - `options` _directives adjusted in Configuration.h and Configuration_Adv.h._
   
