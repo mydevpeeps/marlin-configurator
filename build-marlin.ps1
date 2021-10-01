@@ -1,7 +1,14 @@
+#
+# marlin-build.ps1
+# See github for info: 
+#
+
+# we require powershell 6.0 or higher to run
 if ($host.version.major -lt 6) {
     throw "This script requires PowerShell version 6.0 or higher"
 }
 
+# global vars
 $GitResetHard=$false
 $upgradeio = $false
 $configonly = $false
@@ -14,6 +21,7 @@ $PIOVENV = "$env:USERPROFILE\.platformio\penv"
 
 . "$PIOVENV\scripts\Activate.ps1"
 
+# pulls the example marlin config
 function Get-MarlinExampleConfig {
     param(
         [Parameter(Mandatory=$true)]
@@ -36,6 +44,7 @@ function Get-MarlinExampleConfig {
     }
 }
 
+# enables boolean directive
 function Enable-MarlinConfigOption {
     param (
         [Parameter(Mandatory=$true)]
@@ -66,6 +75,7 @@ function Enable-MarlinConfigOption {
     throw "Option not found: $Option"
 }
 
+# disables boolean directive
 function Disable-MarlinConfigOption {
     param (
         [Parameter(Mandatory=$true)]
@@ -96,6 +106,7 @@ function Disable-MarlinConfigOption {
     throw "Option not found: $Option"
 }
 
+# adds a config option if it's not there already
 function Add-MarlinConfigOption {
     param (
         [Parameter(Mandatory=$true)]
@@ -109,6 +120,7 @@ function Add-MarlinConfigOption {
     "`n#define $Option $Value" | Add-Content -Path $MarlinRoot\Marlin\Configuration.h
 }
 
+# replaces the value for a config item, enabling it if it was disabled
 function Set-MarlinConfigOption {
     param (
         [Parameter(Mandatory=$true)]
@@ -142,6 +154,7 @@ function Set-MarlinConfigOption {
     Add-MarlinConfigOption -MarlinRoot $MarlinRoot -Option $Option -Value $Value
 }
 
+# get all the command-line args
 for ( $i = 0; $i -lt $args.count; $i++) {
     if ( $args[$i] -eq "--git-reset" ) { 
         $GitResetHard = $true 
