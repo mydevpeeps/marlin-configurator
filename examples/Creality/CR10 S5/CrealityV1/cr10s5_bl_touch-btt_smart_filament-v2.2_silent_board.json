@@ -5,7 +5,7 @@
     "configonly" : false,
     "silent" : false,
     "buildargs" : "--silent",
-    "marlinroot" : "D:\\localadmin\\Documents\\marlin_build\\Git-Marlin\\Marlin"
+    "marlinroot" : "D:\\localadmin\\Documents\\marlin_build\\Git-Marlin"
     },
 "useExample": {
   "branch": "bugfix-2.0.x",

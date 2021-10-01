@@ -292,13 +292,18 @@ if ($useconfig) {
         if ($config.settings.buildargs) { 
             $json_buildargs = $config.settings.buildargs 
             if (-not $silent) { Write-Output "      PlatformIO Build Args [JSON]: $json_buildargs" }
-            if (-not $silent) { Write-Output "      PlatformIO Build Args [ARGS]: $arg_buildargs" }
             if (-not ($json_buildargs -eq $arg_buildargs)) {
-                if ($preferargs) {
-                    $buildargs = $arg_buildargs
+                if ($arg_buildargs) {
+                    if (-not $silent) { Write-Output "      PlatformIO Build Args [ARGS]: $arg_buildargs" }
+                    if ($preferargs) {
+                        $buildargs = $arg_buildargs
+                    }
+                    else {
+                        throw "Settings Conflict -> Platform IO Build Args: JSON [$json_buildargs]; ARGS [$arg_buildargs]. Use --preferargs to override, don't use --buildargs, or change the value in the JSON config."
+                    }
                 }
                 else {
-                    throw "Settings Conflict -> Platform IO Build Args: JSON [$json_buildargs]; ARGS [$arg_buildargs]. Use --preferargs to override, don't use --buildargs, or change the value in the JSON config."
+                    $buildargs = $json_buildargs
                 }
             if (-not $silent) { Write-Output "      Platform IO Build Args : $buildargs" }
             }
@@ -306,18 +311,23 @@ if ($useconfig) {
         if ($config.settings.marlinroot) { 
             $json_marlinroot = $config.settings.marlinroot 
             if (-not $silent) { Write-Output "      Marlin Root Path [JSON]: $json_marlinroot" }
-            if (-not $silent) { Write-Output "      Marlin Root Path [ARGS]: $arg_marlinroot" }
             if (-not ($json_marlinroot -eq $arg_marlinroot)) {
-                if ($preferargs) {
-                    $MarlinRoot = $arg_marlinroot
-                    $PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-                    $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-                    $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-                    $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
+                if ($arg_marlinroot) {
+                    if (-not $silent) { Write-Output "      Marlin Root Path [ARGS]: $arg_marlinroot" }
+                    if ($preferargs) {
+                        $MarlinRoot = $arg_marlinroot
+                    }
+                    else {
+                        throw "Settings Conflict -> Marlin Root: JSON [$json_marlinroot]; ARGS [$arg_marlinroot]. Use --preferargs to override, don't use --marlin-root, or change the value in the JSON config."
+                    }
                 }
                 else {
-                    throw "Settings Conflict -> Marlin Root: JSON [$json_marlinroot]; ARGS [$arg_marlinroot]. Use --preferargs to override, don't use --marlin-root, or change the value in the JSON config."
+                    $MarlinRoot = $json_marlinroot
                 }
+            $PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+            $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+            $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+            $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
             if (-not $silent) { Write-Output "      Marlin Root : $MarlinRoot" }
             }
         }
