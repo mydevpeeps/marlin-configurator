@@ -22,7 +22,7 @@ $configonly = $false
 $useconfig = $false
 $preferargs = $false
 $silent = $false
-$release = "0.1"
+$release = "0.1-alpha"
 #$has_args = $false
 
 #intro

@@ -11,10 +11,10 @@ This code will pull an example from the live Marlin Configurations Repo:
 https://github.com/MarlinFirmware/Configurations
 
 ## Examples
-There is an example.json included in this repo. Eventually we will write a parser to automatically traverse the Marlin Configurations Repo and kick out a series of example json files that are identical to the stock examples from Marlin. From there you can add/remove as you see fit.
+There is an example.json included in this repo under the user directory. Eventually we will write a parser to automatically traverse the Marlin Configurations Repo and kick out a series of example json files that are identical to the stock examples from Marlin. From there you can add/remove as you see fit. The directory structure will mimick that of the Marlin Configurations repo(s).
 
 ## Pre-tested Configurations for Marlin Firmware
-The _intent_ is to have the user community contribute their .json files to the repo. The directory structure will mimick that of the Marlin Configurations repo.
+The user community can contribute their .json files to the repo under the contrib folder. 
 
 ## Command-Line Parameters
 - `--git-reset` _Performs **git reset --hard** before running. Default is false._
@@ -30,7 +30,13 @@ The _intent_ is to have the user community contribute their .json files to the r
 - `settings` _default configuration for the environment when not using command-line parameters._
 - `useExample` _which example configuration to use and which files to copy._
 - `options` _directives adjusted in Configuration.h and Configuration_Adv.h._
-  
+
+## Directories
+- **contrib** _JSON Configuration files provided by the community._
+- **examples** _Direct extractions of the Marlin Confirugation Repo(s)._
+- **user** _Your JSON Configuration files for your printers._
+
+
 ## Requirements
 - Windows Computer Running PowerShell 6.0 or higher.
 - PlatformIO already installed and configured. 
