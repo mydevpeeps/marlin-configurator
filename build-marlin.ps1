@@ -30,6 +30,24 @@ Write-Output ""
 Write-Output "marlin-build.ps1 v$release Copyright 2021"
 Write-Output ""
 
+# displays help info. used with --help or with an invalid param
+function Display-Help {
+    Write-Output ""
+    Write-Output "Visit https://github.com/mydevpeeps/build-marlin for more info"
+    Write-Output ""
+    Write-Output "  Command-Line Parameters:"
+    Write-Output "   --git-reset Performs git reset --hard before running. Default is false."
+    Write-Output "   --configonly Runs the configuration modifications but does not compile it. Default is false."
+    Write-Output "   --preferargs If there is a value conflict between the JSON config and a parameter, this will use the value of the parameter. Default is to throw an error."
+    Write-Output "   --upgradeio Runs the 'upgrade' and 'update' options for PlatformIO prior to compiling. Default is false. NOT Recommended"
+    Write-Output "   --silent Supresses all of the noise during the configuration phase. Default is false."
+    Write-Output "   --config <file> JSON configuration file to use. Default is none which uses what is in Marlin-Root."
+    Write-Output "   --marlin-root <path> Path where your Marlin Root Repo exists for this build. Default is local directory."
+    Write-Output "   --buildargs arguments Additional arguments to pass to the PlatformIO build. This should always be the last parameter sent."
+    Write-Output ""
+    Exit 0
+}
+
 # pulls the example marlin config
 function Get-MarlinExampleConfig {
     param(
@@ -167,6 +185,10 @@ function Set-MarlinConfigOption {
 # get all the command-line args
 for ( $i = 0; $i -lt $args.count; $i++) {
     #$has_args = $true
+    if ( $args[$i] -eq "--help" ) { 
+        Display-Help
+    }
+
     if ( $args[$i] -eq "--preferargs" ) { 
         $preferargs = $true 
         continue
@@ -376,8 +398,6 @@ if (-not $configonly) {
     # build
     Write-Output "PlatformIO: Building..."
     platformio run --project-dir $MarlinRoot $buildargs
-
-    Write-Output "Done."
 }
 else {
     if ($upgradeio) {
@@ -386,5 +406,4 @@ else {
     else {
         Write-Output "Config Only Set, Not Compiling..."
     }
-    
 }
