@@ -8,9 +8,32 @@ if ($host.version.major -lt 6) {
     throw "This script requires PowerShell version 6.0 or higher"
 }
 
+# Exit with message based on error code
+function Exit-Stage-Left {
+    param(
+    [Parameter(Mandatory=$true)]
+    [string]$Code)
+
+    # display a message based on $Code
+    switch ($Code) {
+        0 {Write-Output "Exit Code: 0 -> Build Executed"}
+        1 {Write-Output "Exit Code: 1 -> Help Information Requested"}
+        2 {Write-Output "Exit Code: 2 -> PlatformIO Environment Not Found"}
+        3 {Write-Output "Exit Code: 3 -> Configuration Only"}
+    }
+
+    Exit $Code
+}
+
 # Platform IO Environment
 $PIOVENV = "$env:USERPROFILE\.platformio\penv"
-. "$PIOVENV\scripts\Activate.ps1"
+if ( -not (Test-Path -Path $PIOVENV\scripts)) {
+    Exit-Stage-Left 2
+}
+else {
+    . "$PIOVENV\scripts\Activate.ps1"
+}
+
 
 # global defaults
 $ConfigFile=""
@@ -23,7 +46,6 @@ $useconfig = $false
 $preferargs = $false
 $silent = $false
 $release = "0.1-alpha"
-#$has_args = $false
 
 #intro
 Write-Output ""
@@ -44,7 +66,7 @@ function Display-Help {
     Write-Output "   --buildargs arguments Additional arguments to pass to the PlatformIO build. This should always be the last parameter sent."
     Write-Output ""
     Start-Process msedge.exe "https://github.com/mydevpeeps/build-marlin"
-    Exit 0
+    Exit-Stage-Left -Code 1
 }
 
 # pulls the example marlin config
@@ -183,7 +205,6 @@ function Set-MarlinConfigOption {
 
 # get all the command-line args
 for ( $i = 0; $i -lt $args.count; $i++) {
-    #$has_args = $true
     if ( $args[$i] -eq "--help" ) { 
         Display-Help
     }
@@ -397,6 +418,7 @@ if (-not $configonly) {
     # build
     Write-Output "PlatformIO: Building..."
     platformio run --project-dir $MarlinRoot $buildargs
+    Exit-Stage-Left -Code 0
 }
 else {
     if ($upgradeio) {
@@ -405,4 +427,5 @@ else {
     else {
         Write-Output "Config Only Set, Not Compiling..."
     }
+    Exit-Stage-Left -Code 3
 }
