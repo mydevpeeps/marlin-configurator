@@ -33,8 +33,6 @@ Write-Output ""
 # displays help info. used with --help or with an invalid param
 function Display-Help {
     Write-Output ""
-    Write-Output "Visit https://github.com/mydevpeeps/build-marlin for more info"
-    Write-Output ""
     Write-Output "  Command-Line Parameters:"
     Write-Output "   --git-reset Performs git reset --hard before running. Default is false."
     Write-Output "   --configonly Runs the configuration modifications but does not compile it. Default is false."
@@ -45,6 +43,7 @@ function Display-Help {
     Write-Output "   --marlin-root <path> Path where your Marlin Root Repo exists for this build. Default is local directory."
     Write-Output "   --buildargs arguments Additional arguments to pass to the PlatformIO build. This should always be the last parameter sent."
     Write-Output ""
+    Start-Process msedge.exe "https://github.com/mydevpeeps/build-marlin"
     Exit 0
 }
 
