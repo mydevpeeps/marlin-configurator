@@ -9,6 +9,19 @@ Remove-Variable * -ErrorAction SilentlyContinue
 #$error.Clear()
 #Clear-Host
 
+# global defaults
+$ConfigFile = ""
+$MarlinRoot = "."
+$buildargs = ""
+$GitResetHard=$false
+$upgradeio = $false
+$configonly = $false
+$useconfig = $false
+$preferargs = $false
+$silent = $false
+$release = "0.11-alpha"
+$year = get-date -f yyyy
+
 # we require powershell 6.0 or higher to run
 if ($host.version.major -lt 6) {
     Exit-Stage-Left -Code 4
@@ -83,19 +96,6 @@ if ( -not (Test-Path -Path $PIOVENV\scripts)) {
 else {
     . "$PIOVENV\scripts\Activate.ps1"
 }
-
-# global defaults
-$ConfigFile = ""
-$MarlinRoot = "."
-$buildargs = ""
-$GitResetHard=$false
-$upgradeio = $false
-$configonly = $false
-$useconfig = $false
-$preferargs = $false
-$silent = $false
-$release = "0.1-alpha"
-$year = get-date -f yyyy
 
 #intro
 Write-Message -Msg " "
