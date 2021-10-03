@@ -33,7 +33,7 @@ The user community can contribute their .json files to the repo under the contri
 
 ## Directories
 - **contrib** _JSON Configuration files provided by the community._
-- **examples** _Direct extractions of the Marlin Confirugation Repo(s)._
+- **examples** _Direct extractions of the Marlin Configuration Repo(s)._
 - **user** _Your JSON Configuration files for your printers._
 
 
