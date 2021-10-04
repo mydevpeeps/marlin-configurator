@@ -38,13 +38,10 @@ The user community can contribute their .json files to the repo under the contri
 
 ## Requirements (PowerShell)
 - Windows Computer Running PowerShell 6.0 or higher.
-- PlatformIO already installed and configured. 
-- Marlin Repo downloaded.
 
 ## Requirements (Python)
 - Marlin Build Environment (has Python already)
 - PlatformIO already installed and configured (because of Marlin). 
-- Marlin Repo downloaded into a folder you want to build from.
 
 ## Troubleshooting & Help
 Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the Marlin Discord (https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project.
