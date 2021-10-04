@@ -21,6 +21,9 @@ $MarlinRoot = "."
 $GitResetHard=$false
 $preferargs = $false
 $silent = $false
+$createdir = $false
+$useconfig = $false
+$minpsver = "6" # Test-Path has a breaking change at v6.1.2
 
 # release info
 $release = "0.11-alpha"
@@ -28,7 +31,7 @@ $year = get-date -f yyyy
 if ($year -gt 2021) {$year = "2021-$year"}
 
 # check for min powershell version
-if ($host.version.major -lt 6) {
+if ($host.version.major -lt $minpsver) {
     Exit-Stage-Left -Code 4
 }
 
@@ -74,7 +77,9 @@ function Exit-Stage-Left {
             4 {Write-Message -Color $Color -Msg "Exit ($Code): This script requires PowerShell version 6.0 or higher"}
             10 {Write-Message -Color $Color -Msg "Exit ($Code): Configuration Directive Not Found"}
             30 {Write-Message -Color $Color -Msg "Exit ($Code): Invalid Command-Line Option"}
-            32 {Write-Message -Color $Color -Msg "Exit ($Code): You must supply a path for --targetdir"}
+            31 {Write-Message -Color $Color -Msg "Exit ($Code): Target Directory Not Found. Use --createdir option to create it or set in JSON configuration to true."}
+            32 {Write-Message -Color $Color -Msg "Exit ($Code): You must supply a valid path for --targetdir"}
+            33 {Write-Message -Color $Color -Msg "Exit ($Code): The --config parameter requires a value"}
             34 {Write-Message -Color $Color -Msg "Exit ($Code): The --config parameter can only be used once"}
             35 {Write-Message -Color $Color -Msg "Exit ($Code): The --targetdir parameter can only be used once"}
             default {Write-Message -Color $Color -Msg "Exit ($Code): Undefined Error Code"}
@@ -228,6 +233,36 @@ function Set-MarlinConfigOption {
     Add-MarlinConfigOption -MarlinRoot $MarlinRoot -Option $Option -Value $Value
 }
 
+# sanity check the target directory and create it if it's not there
+function Verify-Target-Dir {
+    # test to see if target directory exists. If not and --createdir is enabled, create it.
+    if ( -not (Test-Path -Path $MarlinRoot)) {
+        if ( $createdir ) {
+            Write-Message -Color Yellow -Msg "      Created Target Directory : $MarlinRoot" 
+            $MakeDir = "$MarlinRoot\Marlin"
+            New-Item -Force -ItemType Directory -Path "$MakeDir" | Out-Null
+            #confirm path was created
+            if ( -not (Test-Path -Path $MarlinRoot)) {
+                Exit-Stage-Left -Code 32 -Color Red -Msg "** UNABLE TO CREATE TARGET DIRECTORY **"
+            }
+        }
+        else {
+            Exit-Stage-Left -Code 31 -Color Red
+        }
+    }
+
+    #convert $MarlinRoot to full path in case it's a relative path
+    $MarlinRoot = Resolve-Path -LiteralPath $MarlinRoot
+
+    # set the function variables to the target directory by default
+    $PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+    $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+    $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
+    $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
+
+    Write-Message -Msg "      Target Directory : $MarlinRoot" 
+}
+
 # get all the command-line args
 if ($args.count -gt 0) {
     Write-Message -Color DarkCyan -Msg "Processing Command-Line Arguments"
@@ -242,9 +277,16 @@ for ( $i = 0; $i -lt $args.count; $i++) {
     }
 }
 
-# process args (new method)
+# process args (new method?)
+
 # process args
 for ( $i = 0; $i -lt $args.count; $i++) {
+    if ( $args[$i] -eq "--createdir" ) { 
+        Write-Message -Color Green -Msg "   --createdir enabled"
+        $createdir = $true 
+        continue
+    }
+
     if ( $args[$i] -eq "--preferargs" ) { 
         Write-Message -Color Green -Msg "   --preferargs enabled"
         $preferargs = $true 
@@ -265,7 +307,7 @@ for ( $i = 0; $i -lt $args.count; $i++) {
 
     if ( $args[$i] -eq "--config" ) {
         if ($i -gt $args.Count -1) {
-            Exit-Stage-Left -Code 31 -Color Red
+            Exit-Stage-Left -Code 33 -Color Red
             Break
         }
         if (-not $useconfig) {
@@ -298,19 +340,6 @@ for ( $i = 0; $i -lt $args.count; $i++) {
     }
 }
 
-# set the default marlin root build path for functions
-$PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-$PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-$PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-$PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
-
-# enable silent mode for functions
-if ($silent) {
-    $PSDefaultParameterValues["Set-MarlinConfigOption:silent"] = $true
-    $PSDefaultParameterValues["Enable-MarlinConfigOption:silent"] = $true
-    $PSDefaultParameterValues["Disable-MarlinConfigOption:silent"] = $true
-}
-
 # reset git if requested
 if ( $GitResetHard ) {
     Write-Message -Color Yellow -Msg "Resetting the Marlin sources at $MarlinRoot"
@@ -319,7 +348,7 @@ if ( $GitResetHard ) {
     Pop-Location
 }
 
-# if we are using a config file than parse it for config changes
+# if we are using a config file than parse it for config values
 if ($useconfig) {
     if (-not $ConfigFile -eq "") {
         if ( -not (Test-Path -Path $ConfigFile)) {
@@ -334,17 +363,23 @@ if ($useconfig) {
     $Config = (Get-Content -Path $ConfigFile | ConvertFrom-Json -AsHashtable)
 
     if ($Config.settings) {
-        if (-not $silent) { Write-Message -Color DarkCyan -Msg  "   Processing JSON Settings ..." }
         #no conflicts for true/false. All default to false and any true flips to true.
+        Write-Message -Color DarkCyan -Msg  "   Processing JSON Settings ..."
+        
         if ($config.settings.silent -is [System.Boolean]) { 
             $json_silent = $config.settings.silent
             if ($json_silent -eq $true) {
                 $silent = $true
-                $PSDefaultParameterValues["Set-MarlinConfigOption:silent"] = $true
-                $PSDefaultParameterValues["Enable-MarlinConfigOption:silent"] = $true
-                $PSDefaultParameterValues["Disable-MarlinConfigOption:silent"] = $true
             }
             Write-Message -Msg "      Silent Mode : $silent" 
+        }
+
+        if ($config.settings.createdir -is [System.Boolean]) { 
+            $json_createdir = $config.settings.createdir
+            if ($json_createdir -eq $true) {
+                $createdir = $true
+            }
+            Write-Message -Msg "      Create Target Directory: $createdir 
         }
 
         if ($config.settings.gitreset -is [System.Boolean]) { 
@@ -354,6 +389,7 @@ if ($useconfig) {
             }
             Write-Message -Msg "      GIT Hard Reset : $GitResetHard" 
         }
+
         if ($config.settings.marlinroot) { 
             $json_marlinroot = $config.settings.marlinroot 
             Write-Message -Msg "      Target Directory [JSON]: $json_marlinroot" 
@@ -364,24 +400,25 @@ if ($useconfig) {
                         $MarlinRoot = $arg_marlinroot
                     }
                     else {
-                        $ErrorMsg = "Settings Conflict -> Target Directory : Use --preferargs to override, don't use --targetdir, or change the value in the JSON config."
-                        Exit-Stage-Left -Code 50 -Color Red -Msg $ErrorMsg
+                        Exit-Stage-Left -Code 50 -Color Red -Msg "Settings Conflict -> Target Directory : Use --preferargs to override, don't use --targetdir, or change the value in the JSON config."
                     }
                 }
                 else {
                     $MarlinRoot = $json_marlinroot
                 }
-            $PSDefaultParameterValues["Set-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-            $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-            $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
-            $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
-            if (-not ($json_marlinroot -eq $arg_marlinroot)) {
-                Write-Message -Msg "      Target Directory : $MarlinRoot" 
-            }
             }
         }
     }
     
+    Verify-Target-Dir # logic to make sure the target dir is valid
+    
+    # enable silent mode for functions
+    if ($silent) {
+        $PSDefaultParameterValues["Set-MarlinConfigOption:silent"] = $true
+        $PSDefaultParameterValues["Enable-MarlinConfigOption:silent"] = $true
+        $PSDefaultParameterValues["Disable-MarlinConfigOption:silent"] = $true
+    }
+
     if ($Config.useExample) {
         Write-Message -Color DarkCyan -Msg  "   Processing JSON Config Example ..." 
         $Branch = "bugfix-2.0.x"

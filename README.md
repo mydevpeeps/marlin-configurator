@@ -1,5 +1,7 @@
 # marlin-configurator
-PowerShell Build Script for Marlin Configurations
+Build Script for Marlin Configurations
+- Currently in Powershell (ps1)
+- Porting to Python (py)
 
 _Concept originally imagined by https://github.com/The-EG_
 
@@ -21,7 +23,8 @@ The user community can contribute their .json files to the repo under the contri
 - `--preferargs` _If there is a value conflict between the JSON config and a parameter, this will use the value of the parameter. Default is to throw an error._
 - `--silent` _Supresses all of the noise during the configuration phase. Default is false._
 - `--config <file>` _JSON configuration file to use. Default is none which uses what is in Marlin-Root._
-- `--targetdir <path>` _Path where your Configuration files go. Default is local directory._
+- `--targetdir <path>` _Path where your Configuration files go. If it is specified and missing, will error unless using --createdir. Default is local directory._
+- `--createdir` _Will create the target directory if it does not exist._
 
 ## JSON File Sections
 - `settings` _default configuration for the environment when not using command-line parameters._
@@ -33,10 +36,15 @@ The user community can contribute their .json files to the repo under the contri
 - **examples** _Direct extractions of the Marlin Configuration Repo(s)._
 - **user** _Your JSON Configuration files for your printers._
 
-## Requirements
+## Requirements (PowerShell)
 - Windows Computer Running PowerShell 6.0 or higher.
 - PlatformIO already installed and configured. 
 - Marlin Repo downloaded.
+
+## Requirements (Python)
+- Marlin Build Environment (has Python already)
+- PlatformIO already installed and configured (because of Marlin). 
+- Marlin Repo downloaded into a folder you want to build from.
 
 ## Troubleshooting & Help
 Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the Marlin Discord (https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project.
