@@ -1,4 +1,4 @@
-# build-marlin
+# marlin-configurator
 PowerShell Build Script for Marlin Configurations
 
 _Concept originally imagined by https://github.com/The-EG_
