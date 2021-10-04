@@ -7,22 +7,27 @@
 Remove-Variable * -ErrorAction SilentlyContinue
 #Remove-Module *
 #$error.Clear()
-#Clear-Host
+#Clear-Host [] # not sure if I want to use this by default. clears all history in shell terminal
+
+# define named parameters. anything outside this is caught in $args
+#param(
+#    [Parameter(Mandatory=$true)]
+#    [string]$targetdir
+#)
 
 # global defaults
 $ConfigFile = ""
 $MarlinRoot = "."
-$buildargs = ""
 $GitResetHard=$false
-$upgradeio = $false
-$configonly = $false
-$useconfig = $false
 $preferargs = $false
 $silent = $false
+
+# release info
 $release = "0.11-alpha"
 $year = get-date -f yyyy
+if ($year -gt 2021) {$year = "2021-$year"}
 
-# we require powershell 6.0 or higher to run
+# check for min powershell version
 if ($host.version.major -lt 6) {
     Exit-Stage-Left -Code 4
 }
@@ -64,19 +69,14 @@ function Exit-Stage-Left {
         #when no $Msg is sent, use generic message
         switch ($Code) {
             #0   {Write-Message -Color $Color -Msg "Exit ($Code):  "}
-            0 {Write-Message -Color $Color -Msg "Exit ($Code): Build Executed"}
+            0 {Write-Message -Color $Color -Msg "Exit ($Code): Configuration Completed"}
             1 {Write-Message -Color $Color -Msg "Exit ($Code): Help Information Requested"}
-            2 {Write-Message -Color $Color -Msg "Exit ($Code): PlatformIO Environment Not Found"}
-            3 {Write-Message -Color $Color -Msg "Exit ($Code): Configuration Only"}
             4 {Write-Message -Color $Color -Msg "Exit ($Code): This script requires PowerShell version 6.0 or higher"}
             10 {Write-Message -Color $Color -Msg "Exit ($Code): Configuration Directive Not Found"}
             30 {Write-Message -Color $Color -Msg "Exit ($Code): Invalid Command-Line Option"}
-            31 {Write-Message -Color $Color -Msg "Exit ($Code): You must supply a filename for --config"}
-            32 {Write-Message -Color $Color -Msg "Exit ($Code): You must supply a path for --marlin-root"}
-            33 {Write-Message -Color $Color -Msg "Exit ($Code): You must supply arguments for --buildargs"}
+            32 {Write-Message -Color $Color -Msg "Exit ($Code): You must supply a path for --targetdir"}
             34 {Write-Message -Color $Color -Msg "Exit ($Code): The --config parameter can only be used once"}
-            35 {Write-Message -Color $Color -Msg "Exit ($Code): The --marlinroot parameter can only be used once"}
-            #50 {Write-Message -Color $Color -Msg "Exit ($Code): $Msg"}
+            35 {Write-Message -Color $Color -Msg "Exit ($Code): The --targetdir parameter can only be used once"}
             default {Write-Message -Color $Color -Msg "Exit ($Code): Undefined Error Code"}
         }
     }
@@ -88,19 +88,10 @@ function Exit-Stage-Left {
     Exit $Code
 }
 
-# Platform IO Environment
-$PIOVENV = "$env:USERPROFILE\.platformio\penv"
-if ( -not (Test-Path -Path $PIOVENV\scripts)) {
-    Exit-Stage-Left -Color Red -Code 2
-}
-else {
-    . "$PIOVENV\scripts\Activate.ps1"
-}
-
 #intro
 Write-Message -Msg " "
 
-Write-Message -Color DarkCyan -Msg "marlin-build.ps1 v$release Copyright $year"
+Write-Message -Color DarkCyan -Msg "marlin-configurator.ps1 v$release Copyright $year"
 Write-Message -Msg " "
 
 # pulls the example marlin config
@@ -116,7 +107,7 @@ function Get-MarlinExampleConfig {
         [string]$MarlinRoot = "."
     )
 
-    if (-not $silent)  { Write-Message -Color DarkCyan -Msg  "     Example Config $ExamplePath from $Branch" }
+    Write-Message -Color DarkCyan -Msg  "     Example Config $ExamplePath from $Branch" 
     foreach($file in $Files) {
         if (-not $silent)  { Write-Message -Msg "        Downloading $file" }
         $ProgressPreference = 'SilentlyContinue'
@@ -251,6 +242,7 @@ for ( $i = 0; $i -lt $args.count; $i++) {
     }
 }
 
+# process args (new method)
 # process args
 for ( $i = 0; $i -lt $args.count; $i++) {
     if ( $args[$i] -eq "--preferargs" ) { 
@@ -262,18 +254,6 @@ for ( $i = 0; $i -lt $args.count; $i++) {
     if ( $args[$i] -eq "--git-reset" ) { 
         Write-Message -Color Green -Msg "    --git-reset enabled"
         $GitResetHard = $true 
-        continue
-    }
-
-    if ( $args[$i] -eq "--configonly" ) { 
-        Write-Message -Color Green -Msg "   --configonly enabled"
-        $configonly = $true 
-        continue
-    }
-
-    if ( $args[$i] -eq "--upgradeio" ) { 
-        Write-Message -Color Green -Msg "   --upgradeio enabled"
-        $upgradeio = $true 
         continue
     }
 
@@ -300,7 +280,7 @@ for ( $i = 0; $i -lt $args.count; $i++) {
         continue
     }
 
-    if ( $args[$i] -eq "--marlin-root" ) {
+    if ( $args[$i] -eq "--targetdir" ) {
         if ($i -gt $args.Count -1) {
             Exit-Stage-Left -Code 32 -Color Red
             Break
@@ -314,19 +294,6 @@ for ( $i = 0; $i -lt $args.count; $i++) {
             Exit-Stage-Left -Code 35 -Color Red
             Break
         }
-        continue
-    }
-
-    # TODO: find a way to parse multiple build args (is it --build-args arg arg2 or is it --build-args arg --build-args arg?)
-    # thinking about doing $buildargs += $arg_buildargs if there is more than one... 
-    if ( $args[$i] -eq "--buildargs" ) {
-        if ($i -gt $args.Count -1) {
-            Exit-Stage-Left -Code 33 -Color Red
-            Break
-        }
-        $arg_buildargs = $args[$i+1]
-        $buildargs = $args[$i+1]
-        $i++
         continue
     }
 }
@@ -363,7 +330,7 @@ if ($useconfig) {
         Exit-Stage-Left -Code 31 -Color Red
     }
 
-    if (-not $silent) { Write-Message -Color DarkCyan -Msg  "Configuring from $ConfigFile" }
+    Write-Message -Color DarkCyan -Msg  "Configuring from $ConfigFile" 
     $Config = (Get-Content -Path $ConfigFile | ConvertFrom-Json -AsHashtable)
 
     if ($Config.settings) {
@@ -377,60 +344,27 @@ if ($useconfig) {
                 $PSDefaultParameterValues["Enable-MarlinConfigOption:silent"] = $true
                 $PSDefaultParameterValues["Disable-MarlinConfigOption:silent"] = $true
             }
-            if (-not $silent) { Write-Message -Msg "      Silent Mode : $silent" }
+            Write-Message -Msg "      Silent Mode : $silent" 
         }
-        if ($config.settings.upgradeio -is [System.Boolean]) { 
-            $json_upgradeio = $config.settings.upgradeio
-            if ($json_upgradeio -eq $true) {
-                $upgradeio = $true
-            }
-            if (-not $silent) { Write-Message -Msg "      Upgrade IO : $upgradeio" }
-        }
+
         if ($config.settings.gitreset -is [System.Boolean]) { 
             $json_gitreset = $config.settings.gitreset
             if ($json_gitreset -eq $true) {
                 $GitResetHard = $true
             }
-            if (-not $silent) { Write-Message -Msg "      GIT Hard Reset : $GitResetHard" }
-        }
-        if ($config.settings.configonly -is [System.Boolean]) { 
-            $json_configonly = $config.settings.configonly
-            if ($json_configonly -eq $true) {
-                $configonly = $true
-            }
-            if (-not $silent) { Write-Message -Msg "      Config Only : $configonly" }
-        }
-        if ($config.settings.buildargs) { 
-            $json_buildargs = $config.settings.buildargs 
-            if (-not $silent) { Write-Message -Msg "      PlatformIO Build Args [JSON]: $json_buildargs" }
-            if (-not ($json_buildargs -eq $arg_buildargs)) {
-                if ($arg_buildargs) {
-                    if (-not $silent) { Write-Message -Msg "      PlatformIO Build Args [ARGS]: $arg_buildargs" }
-                    if ($preferargs) {
-                        $buildargs = $arg_buildargs
-                    }
-                    else {
-                        $ErrorMsg = "Settings Conflict -> Platform IO Build Args: Use --preferargs to override, don't use --buildargs, or change the value in the JSON config."
-                        Exit-Stage-Left -Code 51 -Color Red -Msg $ErrorMsg
-                    }
-                }
-                else {
-                    $buildargs = $json_buildargs
-                }
-            if (-not $silent) { Write-Message -Msg "      Platform IO Build Args : $buildargs" }
-            }
+            Write-Message -Msg "      GIT Hard Reset : $GitResetHard" 
         }
         if ($config.settings.marlinroot) { 
             $json_marlinroot = $config.settings.marlinroot 
-            if (-not $silent) { Write-Message -Msg "      Marlin Root Path [JSON]: $json_marlinroot" }
+            Write-Message -Msg "      Target Directory [JSON]: $json_marlinroot" 
             if (-not ($json_marlinroot -eq $arg_marlinroot)) {
                 if ($arg_marlinroot) {
-                    if (-not $silent) { Write-Message -Msg "      Marlin Root Path [ARGS]: $arg_marlinroot" }
+                    Write-Message -Msg "      Target Directory [ARGS]: $arg_marlinroot" 
                     if ($preferargs) {
                         $MarlinRoot = $arg_marlinroot
                     }
                     else {
-                        $ErrorMsg = "Settings Conflict -> Marlin Root Path: Use --preferargs to override, don't use --marlnroot, or change the value in the JSON config."
+                        $ErrorMsg = "Settings Conflict -> Target Directory : Use --preferargs to override, don't use --targetdir, or change the value in the JSON config."
                         Exit-Stage-Left -Code 50 -Color Red -Msg $ErrorMsg
                     }
                 }
@@ -441,13 +375,15 @@ if ($useconfig) {
             $PSDefaultParameterValues["Enable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
             $PSDefaultParameterValues["Disable-MarlinConfigOption:MarlinRoot"] = "$MarlinRoot"
             $PSDefaultParameterValues["Get-MarlinExampleConfig:MarlinRoot"] = "$MarlinRoot"
-            if (-not $silent) { Write-Message -Msg "      Marlin Root : $MarlinRoot" }
+            if (-not ($json_marlinroot -eq $arg_marlinroot)) {
+                Write-Message -Msg "      Target Directory : $MarlinRoot" 
+            }
             }
         }
     }
     
     if ($Config.useExample) {
-        if (-not $silent) { Write-Message -Color DarkCyan -Msg  "   Processing JSON Config Example ..." }
+        Write-Message -Color DarkCyan -Msg  "   Processing JSON Config Example ..." 
         $Branch = "bugfix-2.0.x"
         $Files = @("Configuration.h","Configuration_adv.h","_Bootscreen.h","_Statusscreen.h")
         $Path = $config.useExample.path
@@ -459,7 +395,7 @@ if ($useconfig) {
     }
 
     if ($Config.options) {
-        if (-not $silent) { Write-Message -Color DarkCyan -Msg  "   Processing JSON Options ..." }
+        Write-Message -Color DarkCyan -Msg  "   Processing JSON Options ..." 
         foreach ($Option in $Config.options.keys) {
             if ($Config.options[$Option] -is [System.Boolean]) {
                 if ($Config.options[$Option] -eq $true) { Enable-MarlinConfigOption -Option $Option }
@@ -471,32 +407,5 @@ if ($useconfig) {
     }
 }
 
-# Build Logic
-if (-not $configonly) {
-    if ($upgradeio) {
-        # check for platform io updates
-        Write-Message -Color DarkCyan -Msg "PlatformIO: Checking for Updates..."
-        platformio upgrade
-        platformio update
-    }
-
-    if (-not $useconfig) {Write-Message -Color Yellow -Msg "No Config Specified, Compiling in $MarlinRoot."}
-
-    # clean
-    Write-Message -Color DarkCyan -Msg -Output "PlatformIO: Cleaning..."
-    platformio run --target clean --project-dir $MarlinRoot $buildargs
-
-    # build
-    Write-Message -Color DarkCyan -Msg  "PlatformIO: Building..."
-    platformio run --project-dir $MarlinRoot $buildargs
-    Exit-Stage-Left -Code 0
-}
-else {
-    if ($upgradeio) {
-        Write-Message -Color Yellow -Msg "Config Only Set, Not Compiling or Upgrading IO..."
-    }
-    else {
-        Write-Message -Color Yellow -Msg "Config Only Set, Not Compiling..."
-    }
-    Exit-Stage-Left -Code 3 -Color Yellow
-}
+# Execution Summary
+Exit-Stage-Left -Code 0
