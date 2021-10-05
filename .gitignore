@@ -149,3 +149,4 @@ imgui.ini
 
 # ignore users files
 /user/
+marlin-configurator.log
