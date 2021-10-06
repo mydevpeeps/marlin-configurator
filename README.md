@@ -65,22 +65,68 @@ For example, if you wanted to enable --silent by default (the default is False) 
 True
 ```
 
-## JSON File Sections
-- `settings` _default configuration for the environment when not using command-line parameters._
-- `useExample` _which example configuration to use and which files to copy._
-- `options` _directives adjusted in Configuration.h and Configuration_Adv.h._
-   - `enable`
-   - `disable`
-   - `values`
+## JSON Configuration File
+JSON Configuration File called with argument `--config [JSON_CONFIG_FILE]` or from _marlin-configurator.ini_.
+
+Section|Subsection|Purpose
+---------|---------|---------
+settings||_default configuration for the environment when not using command-line parameters._
+useExample||_which example configuration to use and which files to copy._
+options||_directives adjusted in Configuration.h and Configuration_Adv.h._
+||enable|_directives to enable (if disabled)_
+||disable|_directives to disable (if enabled)_
+||values|_directives to enable (if disabled) and replace value_
+
+**Example JSON Configuration**
+```json
+{  
+  "settings": {
+    "marlinroot" : "D:/localadmin/Documents/marlin_build/Git-Marlin",
+    "targetdir" : "D:/localadmin/Documents/marlin_build/Git-Marlin"
+  },
+  "useExample": {
+    "branch" : "bugfix-2.0.x",
+    "path" : "Creality/CR-10 S5/CrealityV1",
+    "files" : ["Configuration.h","Configuration_adv.h","_Bootscreen.h","_Statusscreen.h"]
+  },
+  "options": {
+    "enable": {
+      "SHOW_BOOTSCREEN" : true,
+      "SHOW_CUSTOM_BOOTSCREEN" : true,
+      "CUSTOM_STATUS_SCREEN_IMAGE" : true,
+      "PID_BED_DEBUG" : true,
+      "S_CURVE_ACCELERATION" : true,
+      "ARC_P_CIRCLES" : true
+    },
+    "disable": {
+      "JD_HANDLE_SMALL_SEGMENTS" : false,
+      "PROBE_MANUALLY" : false,
+      "G26_MESH_VALIDATION" : false,
+      "LEVEL_BED_CORNERS" : false
+    },
+    "values": {
+      "STRING_CONFIG_H_AUTHOR": "\"(devpeeps.com, James Swart)\"",
+      "CUSTOM_MACHINE_NAME": "\"CR-10 S5\"",
+      "MACHINE_UUID": "\"cede2a2f-41a2-4748-9b12-c55c62f367ff\"",
+      "TEMP_SENSOR_BED" : "5",
+      "DEFAULT_Kp" : "24.9685",
+      "DEFAULT_Ki" : "2.0183",
+      "DEFAULT_Kd" : "77.2068"
+    }
+  }
+}
+```
 
 ## Structure (Files & Directories)
-- `contrib` _JSON Configuration files provided by the community._
-- `examples` _Direct extractions of the Marlin Configuration Repo(s)._
-- `legacy` _Legacy Code which is no longer maintained._
-- `user` _Your JSON Configuration files for your printers._
-- `README.md` _README for the project._
-- `marlin-configurator.ini` _Command-Line Argument Configuration File._
-- `marlin-configurator.py` _Python program for this project._
+  Name|Type|Purpose
+  --------|---|-------
+  contrib|Dir|_JSON Configuration files provided by the community._
+  examples|Dir|_Direct extractions of the Marlin Configuration Repo(s)._
+  legacy|Dir|_Legacy Code which is no longer maintained._
+  user|Dir|_Your JSON Configuration files for your printers._
+  README.md|File|_README for the project._
+  marlin-configurator.ini|File|_Command-Line Argument Configuration File._
+  marlin-configurator.py|File|_Python program for this project._
 
 ## Requirements
 - Marlin Build Environment (has Python already) or python environment.
