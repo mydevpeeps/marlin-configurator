@@ -57,16 +57,15 @@ year = today.year
 #####################################################
 ##### CONFIGURATION VARIABLES
 #####################################################
-ConfigFile = '.\examples\Creality\CR10 S5\CrealityV1\cr10s5_bl_touch-btt_smart_filament-v2.2_silent_board.json'
+JSONFile = 'None'
 importpath = "."
-MarlinRoot = "."
 targetdir = "."
 preferargs = False
 silent = False
 createdir = False
 useconfig = False
 missing = "skip"
-mode = "batch"
+mode = "interactive"
 prefer = "args"
 validate = False
 options = []
@@ -74,8 +73,8 @@ options_enable = []
 options_disable = []
 options_values = []
 files = ['Configuration.h', 'Configuration_adv.h']
-f_config = MarlinRoot + "/Marlin/Configuration.h"
-f_config_adv = MarlinRoot + "/Marlin/Configuration_Adv.h"
+f_config = targetdir + "/Marlin/Configuration.h"
+f_config_adv = targetdir + "/Marlin/Configuration_Adv.h"
 path = "Creality/CR-10 S5/CrealityV1"
 branch = "bugfix-2.0.x"
 URL = "https://raw.githubusercontent.com/MarlinFirmware/Configurations/" + branch + "/config/examples/" + path
@@ -127,6 +126,11 @@ def Message_Header(MSG):
     print(Style.BRIGHT + Fore.CYAN + str(MSG))
     logger.info(MSG)
 
+def Message_Debug(MSG):
+    if debug:
+            print(Style.BRIGHT + Fore.MAGENTA + str(MSG))
+    logger.debug(MSG)
+
 #####################################################
 ##### FUNCTIONS - CORE
 #####################################################
@@ -145,18 +149,36 @@ def ExitStageLeft(CODE,MSG):
 
 def intro():
     # intro
-    print ()
+    print()
     msg = "marlin-configurator v" + str(version) + " - Copyright DevPeeps " + str(year)
     logger.info(msg); Message_Header(msg)
 
-    # display debug state
+    # setup debug state
     if debug:
         logger.setLevel(logging.DEBUG)   #Set the threshold of logger to DEBUG 
-        print (f'  ** DEBUG ENABLED** Check {logfile} for details')
-        print ()
+        Message_Debug("** DEBUG ENABLED** Check " + logfile + " for details")
+        print()
 
 def outro():
     ExitStageLeft(0,"Done")
+
+# https://codereview.stackexchange.com/questions/214935/python-3-6-function-to-ask-for-a-multiple-choice-answer
+def multi_choice_question(options: list,msg,title):
+    while True:
+        print()
+        Message_Header(title)
+        for i, option in enumerate(options, 1):
+            Message_Config(f'{i}. {option}')
+        try:
+            answer = int(input(msg))
+            if 1 <= answer <= len(options):
+                print()
+                return options[answer-1]
+            Message_Error("That option does not exist! Try again!")
+        except ValueError:
+            Message_Error("Doesn't seem like a number! Try again!")
+        print()
+    #logger.info("Question Response: " + title + "|" + msg + "|" + options[answer-1])    
 
 def rmFile(filepath):
     try:
@@ -231,19 +253,20 @@ def validateJSON(JFILE):
 # get and store the settings from the JSON file
 def getJSONSettings():
     logger.debug("getJSONSettings()")
+    print()
     Message_Header("Processing Settings from JSON")
     global silent
     global createdir
-    global MarlinRoot
-    global ConfigFile
+    global targetdir
+    global JSONFile
     global f_config
     global f_config_adv
 
     try:
-        with open(ConfigFile,encoding="utf8") as r:
+        with open(JSONFile,encoding="utf8") as r:
             rdata = json.load(r)
             if "settings" in rdata:
-                with open(ConfigFile,encoding="utf8") as f:
+                with open(JSONFile,encoding="utf8") as f:
                     sdata = json.load(f)['settings']
                     if "silent" in sdata:
                         if not (sdata.get('silent') is None):
@@ -251,20 +274,20 @@ def getJSONSettings():
                             Message_Config("  silent: " + str(silent))
                         else:
                             Message_Error("JSON setting silent is missing a value")
-                    if "createdir" in sdata:
-                        if not (sdata.get('createdir') is None):
-                            createdir = sdata['createdir']
-                            Message_Config("  createdir: " + str(createdir))
+                    if "prefer" in sdata:
+                        if not (sdata.get('prefer') is None):
+                            prefer = sdata['prefer']
+                            Message_Config("  prefer: " + str(prefer))
                         else:
                             Message_Error("JSON setting createdir is missing a value")
-                    if "marlinroot" in sdata:
-                        if not (sdata.get('marlinroot') is None):
-                            MarlinRoot = sdata['marlinroot']
-                            Message_Config("  MarlinRoot: " + str(MarlinRoot))
-                            f_config = MarlinRoot + "/Marlin/Configuration.h"
-                            f_config_adv = MarlinRoot + "/Marlin/Configuration_Adv.h"
+                    if "targetdir" in sdata:
+                        if not (sdata.get('targetdir') is None):
+                            targetdir = sdata['targetdir']
+                            Message_Config("  targetdir: " + str(targetdir))
+                            f_config = targetdir + "/Marlin/Configuration.h"
+                            f_config_adv = targetdir + "/Marlin/Configuration_Adv.h"
                         else:
-                            Message_Error("JSON setting marlinroot is missing a value")
+                            Message_Error("JSON setting targetdir is missing a value")
     except IOError as ioe: ##error message
         Message_Error("IOError Occured in getJSONSettings")
         print(ioe)
@@ -275,18 +298,19 @@ def getJSONSettings():
 # get and store the example config settings from the JSON file
 def getJSONConfig():
     logger.debug("getJSONConfig()")
+    print()
     Message_Header("Processing Example Marlin Configuration from JSON")
     global branch
     global path
     global files
     global URL
-    global ConfigFile
+    global JSONFile
 
     try:
-        with open(ConfigFile,encoding="utf8") as r:
+        with open(JSONFile,encoding="utf8") as r:
             rdata = json.load(r)
             if "useExample" in rdata:
-                with open(ConfigFile,encoding="utf8") as f:
+                with open(JSONFile,encoding="utf8") as f:
                     sdata = json.load(f)['useExample']
                     if "branch" in sdata:
                         if not (sdata.get('branch') is None):
@@ -306,7 +330,7 @@ def getJSONConfig():
                             for name in files:
                                 Message_Config("     downloading " + str(name) + " from " + URL)
                                 furl = URL + "/" + name
-                                lfilename = MarlinRoot + "/Marlin/" + name
+                                lfilename = targetdir + "/Marlin/" + name
                                 rmFile(lfilename) # remove old file first .. NO CACHING!
                                 lfile=open(lfilename, mode="w", encoding="utf-8")
                                 lfile.write(getWebFile(furl))
@@ -326,12 +350,13 @@ def sort_by_key(list):
 # get and store the directives (options) from the JSON file
 def getJSONOptions():
     logger.debug("getJSONOptions()")
+    print()
     Message_Header("Processing Directives from JSON")
-    global MarlinRoot
+    global targetdir
     global path
     global files
     global URL
-    global ConfigFile
+    global JSONFile
     global f_config
     global f_config_adv
     global options
@@ -339,16 +364,16 @@ def getJSONOptions():
     global options_disable
     global options_values
 
-    f_config = MarlinRoot + "/Marlin/Configuration.h"
-    f_config_adv = MarlinRoot + "/Marlin/Configuration_Adv.h"
+    f_config = targetdir + "/Marlin/Configuration.h"
+    f_config_adv = targetdir + "/Marlin/Configuration_Adv.h"
     Message_Config("   Using " + f_config)
     Message_Config("   Using " + f_config_adv)
 
     try:
-        with open(ConfigFile,encoding="utf8") as r:
+        with open(JSONFile,encoding="utf8") as r:
             rdata = json.load(r)
             if "options" in rdata:
-                with open(ConfigFile,encoding="utf8") as f:
+                with open(JSONFile,encoding="utf8") as f:
                     options = json.load(f)['options']
                     if "enable" in options:
                         if (len(options['enable']) > 0):
@@ -487,12 +512,20 @@ def enableDirectives():
             pattern = "^(\s*)(\/\/)(\s*)#define(\s*)" + directive + "(\s)"
             if findDirective(directive,data1):
                 exists = True
-                Message_Config("      " + directive + " (Configuration.h)")
+                msg = "      " + directive + " (Configuration.h)"
+                if silent == True:
+                    logger.info(msg)
+                else:
+                    Message_Config(msg)
                 data1 = data1.replace(disabled, enabled)
                 #data1 = re.sub(pattern, enabled, data1, re.MULTILINE)
             if findDirective(directive,data2):
                 exists = True
-                Message_Config("      " + directive + " (Configuration_adv.h)")
+                msg = "      " + directive + " (Configuration_adv.h)"
+                if silent == True:
+                    logger.info(msg)
+                else:
+                    Message_Config(msg)
                 data2 = data2.replace(disabled, enabled)
                 #data2 = re.sub(pattern, enabled, data2, re.MULTILINE)
             if exists == False:
@@ -538,11 +571,19 @@ def disableDirectives():
             enabled = "#define " + directive
             if findDirective(directive,data1):
                 exists = True
-                Message_Config("      " + directive + " (Configuration.h)")
+                msg = "      " + directive + " (Configuration.h)"
+                if silent == True:
+                    logger.info(msg)
+                else:
+                    Message_Config(msg)
                 data1 = data1.replace(enabled,disabled)
             if findDirective(directive,data2):
                 exists = True
-                Message_Config("      " + directive + " (Configuration_adv.h)")
+                msg = "      " + directive + " (Configuration_adv.h)"
+                if silent == True:
+                    logger.info(msg)
+                else:
+                    Message_Config(msg)                
                 data2 = data2.replace(enabled,disabled)
             if exists == False:
                 Message_Warning("      " + directive + " not found. Skipping.")
@@ -593,7 +634,11 @@ def updateValues():
 
             if findDirective(directive,data1):
                 exists = True
-                Message_Config("      " + directive + " = " + value + " (Configuration.h)")
+                msg = "      " + directive + " = " + value + " (Configuration.h)"
+                if silent == True:
+                    logger.info(msg)
+                else:
+                    Message_Config(msg)
                 spaces = str(getDirective(directive,data1)[0])
                 comment = str(getDirective(directive,data1)[3])
                 if comment != "None":
@@ -603,7 +648,11 @@ def updateValues():
             
             if findDirective(directive,data2):
                 exists = True
-                Message_Config("      " + directive + " = " + value + " (Configuration_adv.h)")
+                msg = "      " + directive + " = " + value + " (Configuration_adv.h)"
+                if silent == True:
+                    logger.info(msg)
+                else:
+                    Message_Config(msg)
                 spaces = str(getDirective(directive,data2)[0])
                 comment = str(getDirective(directive,data2)[3])
                 if comment != "None":
@@ -647,36 +696,84 @@ def main(args):
     global mode
     global prefer
     global validate
-    global ConfigFile
-    global MarlinRoot
+    global JSONFile
+    global targetdir
+    opmode = "export"
 
-    intro() #Hello World!
-
-    # parse args
-    # Namespace(config=None, createdir='false', import=None, missing='skip', mode='batch', prefer='args', silent='false', target='.', validate='false')
+    ##### process args
     # https://realpython.com/python-namespaces-scope/
-    createdir = args.createdir
-    importpath = str(args.importpath)
-    missing = str(args.missing)
-    mode = str(args.mode)
-    prefer = str(args.prefer)
-    if prefer == "args":
-        preferargs = True
-    silent = args.silent
-    if str(args.target) != "None":
-        targetdir = str(args.target)
-        MarlinRoot = str(args.target)
-    validate = args.validate
-    if str(args.config) != "None":
-            ConfigFile = str(args.config)
-    
-    # get data from JSON Config
-    Message_Header("Using " + ConfigFile)
+    print()
+    Message_Header("Processing Command-Line Arguments")
+    Message_Config(str(args))
+    #logger.info("ARGS: " + str(args))
+
+    ##### WE MUST HAVE A CONFIG FILE DEFINED
+    args_JSONFile = str(args.config)
+    if not args_JSONFile == 'None':
+        JSONFile = args_JSONFile
+    else:
+        msg = "You Must specify a JSON configuration file using --config!"
+        Message_Error(msg)
+        ExitStageLeft(404,msg)
+
+    ##### Settings from JSON Configuration File
+    print()
+    Message_Header("Using " + JSONFile)
     getJSONSettings()
+
+    ##### JSON Example Configuration Information
     getJSONConfig()
+
+    ## boolean (assign directly to globals as an override)
+    validate = eval(args.validate)
+    silent = eval(args.silent)
+    args_force = eval(args.force)
+    createdir = eval(args.createdir)
+
+    ## strings
+    
+    args_missing = str(args.missing)
+    args_mode = str(args.mode)
+    args_prefer = str(args.prefer)
+    args_targetdir = str(args.target)
+    args_JSONFile = str(args.config)
+    args_importpath = str(args.importpath)
+    
+    ##### resolve conficts
+    # if there is a mode/prefer conflict we must resolve this regardless of any setting
+    # skip if --force is enabled
+    if not args_force:
+        if args_mode != mode:
+            mode = str(multi_choice_question(['batch','interactive'],'Use interactive or batch mode ? ','Settings Conflict --mode'))
+        if prefer != args_prefer:
+            prefer = multi_choice_question(['args','config'],'Prefer configuration or argument values ? ','Settings Conflict --prefer')    
+    else:
+        mode = 'batch'
+        prefer = 'args'
+    
+    # resolve conflicts based on the mode we are in
+    if mode == "interactive":
+        if missing != args_missing:
+            missing = multi_choice_question(['add','skip'],'Add or Skip missing directives ? ','Settings Conflict --missing')    
+        if args_targetdir != 'None':
+            if targetdir != args_targetdir:
+                targetdir = multi_choice_question([targetdir,args_targetdir],'Target Directory ? ','Settings Conflict --target')    
+        if args_importpath != 'None':
+            if importpath != args_importpath:
+                importpath = multi_choice_question([importpath,args_importpath],'Import Local Configuration Path ? ','Settings Conflict --importpath')    
+    else:
+        Message_Warning("Batch Mode Enabled. All Conflicts will defer to " + prefer + " if set, otherwise to default (if any).")
+        if args_prefer != prefer:
+            if prefer == "args":
+                prefer = args_prefer
+        if args_missing != missing:
+            if prefer == "args":
+                missing = args_missing
+
+    ##### Configuration Directives from JSON Configuration File
     getJSONOptions()
 
-    # Update the Configuration
+    ##### Update the Configuration
     if (len(options_enable) > 0):
         enableDirectives()
     if (len(options_disable) > 0):
@@ -684,7 +781,7 @@ def main(args):
     if (len(options_values) > 0):
         updateValues()
 
-    # Exit gracefully
+    ##### Exit gracefully
     outro()
 
 #####################################################
@@ -694,18 +791,32 @@ def main(args):
 # parse out the args (also create --help output) and then pass to main function
 # https://docs.python.org/3/library/argparse.html
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Builds Configuration Files from the Marlin Examples Online')
-    parser.add_argument('--importpath', type=str, help='Import a local file or config example path')
-    parser.add_argument('--config', type=str, help='JSON Configuration File')
-    parser.add_argument('--target', type=str, help='The directory in which the files will be saved. Default is current directory.')
-    parser.add_argument('--validate', type=str, help='Validate JSON Configuration file syntax.', choices=['true','false'],default='false')
-    parser.add_argument('--createdir', type=str, help='Creates the target directory if it does not exist.', choices=['true','false'],default='false')
-    parser.add_argument('--silent', type=str, help='Suppress Configuration Change Information. Default: false', choices=['true','false'],default='false')
+    intro()
+    parser = argparse.ArgumentParser(description='Builds Configuration Files from Marlin Examples', conflict_handler='resolve', fromfile_prefix_chars='@')
+
+    # files
+    parser.add_argument('--importpath', type=str, metavar="SOURCE_CONFIG_PATH", help='Import a local config example path',default='None')
+    parser.add_argument('--config', type=str, metavar="JSON_CONFIG_FILE", help='JSON Configuration File',default='None')
+    parser.add_argument('--target', type=str, metavar="MARLIN_ROOT_DIR", help='The directory in which the files will be saved. Default is current directory. Usually this is the directory platformio.ini is in.',default='None')
+    
+    # boolean
+    parser.add_argument('--argsfile', type=str, help='Uses marlin-configurator.ini. !! Using this file overrides all other args on the command-line !!', choices=['True','False'], default='False')
+    parser.add_argument('--force', type=str, help='Forces running in batch mode, removing all prompts & preferring args over configuration values', choices=['True','False'],default='False')
+    parser.add_argument('--validate', type=str, help='Validate JSON Configuration file syntax.', choices=['True','False'],default='False')
+    parser.add_argument('--createdir', type=str, help='Creates the target directory if it does not exist.', choices=['True','False'],default='False')
+    parser.add_argument('--silent', type=str, help='Suppress Configuration Change Information. Default: false', choices=['True','False'],default='False')
+
+    # behavioral preferences
     parser.add_argument('--prefer', type=str, help='Prefer either the JSON config, or the command-line when there is a conflict.', choices=['config','args'],default='args')
     parser.add_argument('--missing', type=str, help='Add missing directives instead of skipping them. Default: skip.', choices=['add','skip'], default='skip')
-    parser.add_argument('--mode', type=str, help='Batch mode will skip all prompts. Interactive mode will present choices.', choices=['batch','interactive'], default='batch')
+    parser.add_argument('--mode', type=str, help='Batch mode will skip all prompts except preference. Interactive mode will present choices when conflicts arise.', choices=['batch','interactive'], default='interactive')
+    #parser.add_argument('--opmode', type=str, help='In import mode we read marlin files and save them to a json file. In export mode we ', choices=['batch','interactive'], default='interactive')
+    
+    # process args & read from conf file if set
     args = parser.parse_args()
+    if (eval(args.argsfile)):
+        Message_Warning("Using marlin-configurator.ini. All other passed arguments ignored.")
+        args = parser.parse_args(['@marlin-configurator.ini'])
 
-    # Do something with it
+    # pass to main function
     main(args)
-    #print(args.slidesid, args.dir, args.total_slides )

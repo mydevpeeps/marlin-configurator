@@ -1,28 +1,8 @@
 {
-  "README":{
-    "no_comments_allowed_in_json" : "JSON does not allow comments. You must REMOVE a line if you don't want it here.",
-    "description": "This section can be removed for production files. It's here to explain the JSON file",
-    "special_characters": "You must use \\ for a backslash or other special characters in JSON.",
-    "settings": {
-      "silent" : "default: false",
-      "createdir" : "default: false",
-      "marlinroot" : "Path to your marlin root distro. You must use \\ for a backslash or other special characters in JSON. See --targetdir."
-    },
-    "useExample": {
-      "branch": "branch to use for config example pulls",
-      "path": "path withing the branch to use to get to the config files",
-      "files": ["array","of","files","to","copy"]
-    },
-    "options": {
-      "enable" : "set to false to disable a directive",
-      "disable" : "set to true to enable a directive",
-      "set_value" : "pass text to a directive in quotes. If the value requires quotes you must use an escaped \"around the text\" "
-    }
-  },
   "settings": {
-    "silent" : false,
-    "createdir" : false,
-    "marlinroot" : "D:/localadmin/Documents/marlin_build/Git-Marlin"
+    "silent" : true,
+    "targetdir" : "D:/localadmin/Documents/marlin_build/Git-Marlin",
+    "prefer": "args"
   },
   "useExample": {
     "branch" : "bugfix-2.0.x",

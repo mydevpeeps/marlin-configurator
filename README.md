@@ -68,21 +68,28 @@ True
 ## JSON Configuration File
 JSON Configuration File called with argument `--config [JSON_CONFIG_FILE]` or from _marlin-configurator.ini_.
 
-Section|Subsection|Purpose
----------|---------|---------
-settings||_default configuration for the environment when not using command-line parameters._
-useExample||_which example configuration to use and which files to copy._
-options||_directives adjusted in Configuration.h and Configuration_Adv.h._
-||enable|_directives to enable (if disabled)_
-||disable|_directives to disable (if enabled)_
-||values|_directives to enable (if disabled) and replace value_
+Section|Subsection|Options|Purpose
+---------|---------|---------|---------
+settings|||_default configuration for the environment when not using command-line parameters._
+||targetdir|path_to_directory|_directory where the resulting modified configuration files go_
+||silent|True/False|_suppresses verbose output during configuration changes_
+||prefer|args/config|_when arguements conflict, defines what source is preferred, args or config
+useExample|||_which example configuration to use and which files to copy._
+||branch||_which branch to pull example configuration files from_
+||path||_path inside the branch_
+||files||_array of the names of the files_
+options|||_directives adjusted in Configuration.h and Configuration_Adv.h._
+||enable||_directives to enable (if disabled)_
+||disable||_directives to disable (if enabled)_
+||values||_directives to enable (if disabled) and replace value_
 
 **Example JSON Configuration**
 ```json
 {  
   "settings": {
-    "marlinroot" : "D:/localadmin/Documents/marlin_build/Git-Marlin",
-    "targetdir" : "D:/localadmin/Documents/marlin_build/Git-Marlin"
+    "silent" : true,
+    "targetdir" : "D:/localadmin/Documents/marlin_build/Git-Marlin",
+    "prefer": "args"
   },
   "useExample": {
     "branch" : "bugfix-2.0.x",
@@ -132,4 +139,4 @@ options||_directives adjusted in Configuration.h and Configuration_Adv.h._
 - Marlin Build Environment (has Python already) or python environment.
 
 ## Troubleshooting & Help
-Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the [Marlin Discord] (https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project.
+Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the [Marlin Discord](https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project - yet. If it ever is, it will become it's own project/repo in Marlin and maintained there.
