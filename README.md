@@ -16,13 +16,48 @@ There is an example.json included in this repo under the user directory. Eventua
 ## Pre-tested Configurations for Marlin Firmware
 The user community can contribute their .json files to the repo under the contrib folder. 
 
-## Command-Line Parameters
-- `--git-reset` _Performs **git reset --hard** before running. Default is false._
-- `--preferargs` _If there is a value conflict between the JSON config and a parameter, this will use the value of the parameter. Default is to throw an error._
-- `--silent` _Supresses all of the noise during the configuration phase. Default is false._
-- `--config <file>` _JSON configuration file to use. Default is none which uses what is in Marlin-Root._
-- `--targetdir <path>` _Path where your Configuration files go. If it is specified and missing, will error unless using --createdir. Default is local directory._
-- `--createdir` _Will create the target directory if it does not exist._
+## Command-Line Arguments
+Defer to `py marlin-configuration.py --help` for assistance with all of the command line arguments.
+
+```
+  -h, --help            show this help message and exit
+  --importpath SOURCE_CONFIG_PATH
+                        Import a local file or config example path
+  --config JSON_CONFIG_FILE
+                        JSON Configuration File
+  --target MARLIN_ROOT_DIR
+                        The directory in which the files will be saved. Default is current directory. Usually this is the      
+                        directory platformio.ini is in.
+  --argsfile {True,False}
+                        Uses marlin-configurator.ini. !! Using this file overrides all other args on the command-line !!       
+  --force {True,False}  Forces running in batch mode, removing all prompts & preferring args over configuration values
+  --validate {True,False}
+                        Validate JSON Configuration file syntax.
+  --createdir {True,False}
+                        Creates the target directory if it does not exist.
+  --silent {True,False}
+                        Suppress Configuration Change Information. Default: false
+  --prefer {config,args}
+                        Prefer either the JSON config, or the command-line when there is a conflict.
+  --missing {add,skip}  Add missing directives instead of skipping them. Default: skip.
+  --mode {batch,interactive}
+                        Batch mode will skip all prompts except preference. Interactive mode will present choices when
+                        conflicts arise.
+```
+
+### Argument Configuration File
+_Online Reference_: https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
+**filename**: _marlin-configuration.ini_
+
+This file can be used in place of using command-line arguments. The format of the file is:
+```--option
+option_value
+```
+
+For example, if you wanted to enable --silent by default (the default is False) your file would look like this:
+```--silent
+True
+```
 
 ## JSON File Sections
 - `settings` _default configuration for the environment when not using command-line parameters._
