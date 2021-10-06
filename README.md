@@ -75,10 +75,11 @@ True
 ## Structure (Files & Directories)
 - `contrib` _JSON Configuration files provided by the community._
 - `examples` _Direct extractions of the Marlin Configuration Repo(s)._
+- `legacy` _Legacy Code which is no longer maintained._
 - `user` _Your JSON Configuration files for your printers._
-- `README.md` _README for the project_
-- `marlin-configurator.ini` _Command-Line Argument Configuration File_
-- `marlin-configurator.py` _Python program for this project_
+- `README.md` _README for the project._
+- `marlin-configurator.ini` _Command-Line Argument Configuration File._
+- `marlin-configurator.py` _Python program for this project._
 
 ## Requirements
 - Marlin Build Environment (has Python already) or python environment.
