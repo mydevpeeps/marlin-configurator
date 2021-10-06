@@ -1,8 +1,9 @@
 # marlin-configurator
-_Concept originally imagined by https://github.com/The-EG using PowerShell_
+_Concept originally imagined by [The-EG] (https://github.com/The-EG) using PowerShell_
 
 ## Build Script for Marlin Configurations
-The purpose of this project is to partially eliminate the most common configuration questions for compiling Marlin by providing a mechanism to create configuration files based on an existing Marlin Configuration example.  It can also work with local files through options. 
+The purpose of this project is to partially eliminate the most common configuration questions for compiling [Marlin] (https://github.com/MarlinFirmware/Marlin) by providing a mechanism to create configuration files based on an existing Marlin Configuration example.  It can also work with local files through options. 
+
 ## Changes to Marin Configuration Directives
 Marlin is constantly adding, removing, and changing directives in the configuration files. Even within the same bugfix branch between releases these can change. It is up to the user to be aware of and maintain these options. Not all of the directives are in the Marlin Configuration (.h) files and there are definately some that are valid to be added (such as a PIN reference for a feature). 
 
@@ -10,8 +11,8 @@ Marlin is constantly adding, removing, and changing directives in the configurat
 This code will pull an example from the live Marlin Configurations Repo:
 https://github.com/MarlinFirmware/Configurations
 
-## Examples
-There is an example.json included in this repo under the user directory. Eventually we will write a parser to automatically traverse the Marlin Configurations Repo and kick out a series of example json files that are identical to the stock examples from Marlin. From there you can add/remove as you see fit. The directory structure will mimick that of the Marlin Configurations repo(s).
+## Included Examples
+There is an _example.json_ included in this repo under the _user_ directory. Eventually we will write a parser to automatically traverse the [Marlin Configurations Repo] (https://github.com/MarlinFirmware/Configurations) and kick out a series of example json files that are identical to the stock examples from Marlin. From there you can add/remove as you see fit. This directory structure will mimick that of the Marlin Configurations repo(s).
 
 ## Pre-tested Configurations for Marlin Firmware
 The user community can contribute their .json files to the repo under the contrib folder. 
@@ -46,7 +47,7 @@ Defer to `py marlin-configuration.py --help` for assistance with all of the comm
 ```
 
 ### Argument Configuration File
-_Online Reference_: https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
+_Online Reference_: [Python Argparse] (https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars)
 
 **filename**: _marlin-configurator.ini_
 
@@ -85,4 +86,4 @@ True
 - Marlin Build Environment (has Python already) or python environment.
 
 ## Troubleshooting & Help
-Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the Marlin Discord (https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project.
+Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the [Marlin Discord] (https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project.
