@@ -136,6 +136,7 @@ def Message_Exception(MSG,e):
     print(Style.BRIGHT + Fore.MAGENTA + str(MSG))
     logger.critical(MSG)
     logger.exception(e)
+    ExitStageLeft(500,MSG)
 
 #####################################################
 ##### FUNCTIONS - CORE
@@ -182,7 +183,7 @@ def multi_choice_question(options: list,msg,title):
                 return options[answer-1]
             Message_Error("That option does not exist! Try again!")
         except ValueError:
-            Message_Error("Doesn't seem like a number! Try again!")
+            Message_Exception("Doesn't seem like a number! Try again!",ValueError)
         print()
     #logger.info("Question Response: " + title + "|" + msg + "|" + options[answer-1])    
 
@@ -329,10 +330,10 @@ def getJSONSettings():
                         else:
                             Message_Error("JSON setting targetdir is missing a value")
     except IOError as ioe: ##error message
-        Message_Error("IOError Occured in getJSONSettings")
+        Message_Exception("IOError Occured in getJSONSettings",ioe)
         print(ioe)
     except Exception as e: ##error message
-        Message_Error("Exception Occured in getJSONSettings")
+        Message_Exception("Exception Occured in getJSONSettings",e)
         print(e)
 
 # get and store the example config settings from the JSON file
@@ -379,14 +380,11 @@ def getJSONConfig():
                         else:
                             Message_Error("JSON useExample files is missing a value")
     except IOError as ioe: ##error message
-        Message_Error("IOError Occured in getJSONConfig")
+        Message_Exception("IOError Occured in getJSONConfig",ioe)
         print(ioe)
     except Exception as e: ##error message
-        Message_Error("Exception Occured in getJSONConfig")
+        Message_Exception("Exception Occured in getJSONConfig",e)
         print(e)
-
-def sort_by_key(list):
-    return pprint.pprint(sorted(list))
 
 # get and store the directives (options) from the JSON file
 def getJSONOptions():
@@ -429,10 +427,10 @@ def getJSONOptions():
                     logger.debug("Disabled:" + str(options_disable))
                     logger.debug("Values:" + str(options_values))
     except IOError as ioe: ##error message
-        Message_Error("IOError Occured in getJSONOptions")
+        Message_Exception("IOError Occured in getJSONOptions",ioe)
         print(ioe)
     except Exception as e: ##error message
-        Message_Error("Exception Occured in getJSONOptions")
+        Message_Exception("Exception Occured in getJSONOptions",e)
         print(e)
 
 
@@ -580,10 +578,10 @@ def enableDirectives():
         f1.close()
         f2.close()
     except IOError as ioe: ##error message
-        Message_Error("IOError Occured in enableDirectives")
+        Message_Exception("IOError Occured in enableDirectives",ioe)
         print(ioe)
     except Exception as e: ##error message
-        Message_Error("Exception Occured in enableDirectives")
+        Message_Exception("Exception Occured in enableDirectives",e)
         print(e)
 
 # disable a directive
@@ -637,10 +635,10 @@ def disableDirectives():
         f1.close()
         f2.close()
     except IOError as ioe: ##error message
-        Message_Error("IOError Occured in disableDirectives")
+        Message_Exception("IOError Occured in disableDirectives",ioe)
         print(ioe)
     except Exception as e: ##error message
-        Message_Error("Exception Occured in disableDirectives")
+        Message_Exception("Exception Occured in disableDirectives",e)
         print(e)
 
 # enable (if disabled) and then change value
@@ -713,10 +711,10 @@ def updateValues():
         f1.close()
         f2.close()
     except IOError as ioe: ##error message
-        Message_Error("IOError Occured in updateValues")
+        Message_Exception("IOError Occured in updateValues",ioe)
         print(ioe)
     except Exception as e: ##error message
-        Message_Error("Exception Occured in updateValues")
+        Message_Exception("Exception Occured in updateValues",e)
         print(e)
 
 #####################################################
