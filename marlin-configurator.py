@@ -22,11 +22,14 @@ from datetime import datetime, timedelta, date
 from jsonschema import validate, ValidationError, SchemaError
 import json
 import sys
+import argparse
 import os
+#import os.path
 import time
 import logging
 import array
 import re
+import subprocess
 
 #####################################################
 ##### COLOR & FONT SETUP
@@ -161,6 +164,47 @@ def rmFile(filepath):
     except:
         Message_Error('Error removing ' + str(filepath))
         logger.error(msg)
+
+def isFile(f):
+    return os.path.isfile(f)
+
+def isDir(d):
+    return os.path.isdir(d)
+
+def pathExists(p):
+    return os.path.exists(p)
+
+def getFileList(p):
+    return os.listdir(p)
+
+def getPlatform():
+    return os.name
+
+def getUName():
+    return os.uname()
+
+def getCWD():
+    return os.getcwd()
+
+def chDir(d):
+    os.chdir(d)
+
+def mkDir(d):
+    os.mkdir(d)
+
+def rmDir(d):
+    os.rmdir(d)
+
+def rmFile(f):
+    os.remove(f)
+
+def exec(cmd):
+    # os.system(cmd)
+    # subprocess.run(["ping","-c 3", "example.com"])
+    subprocess.run(cmd)
+
+def rename(old,new):
+    os.rename(old,new)
 
 #####################################################
 ##### FUNCTIONS - JSON PARSING
@@ -592,22 +636,46 @@ def updateValues():
 #####################################################
 ##### MAIN
 #####################################################
-#Hello World!
-intro()
+def main(args):
+    #Hello World!
+    intro()
 
-# get data from JSON Config
-Message_Header("Using " + ConfigFile)
-getJSONSettings()
-getJSONConfig()
-getJSONOptions()
+    # parse args
+    print(args)
 
-# Update the Configuration
-if (len(options_enable) > 0):
-    enableDirectives()
-if (len(options_disable) > 0):
-    disableDirectives()
-if (len(options_values) > 0):
-    updateValues()
+    # get data from JSON Config
+    Message_Header("Using " + ConfigFile)
+    getJSONSettings()
+    getJSONConfig()
+    getJSONOptions()
 
-# Exit gracefully
-outro()
+    # Update the Configuration
+    if (len(options_enable) > 0):
+        enableDirectives()
+    if (len(options_disable) > 0):
+        disableDirectives()
+    if (len(options_values) > 0):
+        updateValues()
+
+    # Exit gracefully
+    outro()
+
+# parse out the args (also create --help output) and then pass to main function
+# https://docs.python.org/3/library/argparse.html
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Builds Configuration Files from the Marlin Examples Online')
+    parser.add_argument('--target', type=str, help='The directory in which the files will be saved. Default is current directory.')
+    parser.add_argument('--config', type=str, help='JSON Configuration File')
+    parser.add_argument('--import', type=str, help='Import a local file or config example path')
+    parser.add_argument('--validate', type=str, help='Validate JSON Configuration file syntax.', choices=['true','false'])
+    parser.add_argument('--createdir', type=str, help='Creates the target directory if it does not exist.', choices=['true','false'])
+    parser.add_argument('--silent', type=str, help='Suppress Configuration Change Information. Default: false', choices=['true','false'])
+    parser.add_argument('--prefer', type=str, help='Prefer either the JSON config, or the command-line when there is a conflict.', choices=['config','args'])
+    parser.add_argument('--missing', type=str, help='Add missing directives instead of skipping them. Default: skip.', choices=['add','skip'])
+    parser.add_argument('--mode', type=str, help='Batch mode will skip all prompts. Interactive mode will present choices.', choices=['batch','interactive'])
+    
+    args = parser.parse_args()
+
+    # Do something with it
+    main(args)
+    #print(args.slidesid, args.dir, args.total_slides )
