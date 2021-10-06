@@ -58,8 +58,8 @@ year = today.year
 ##### CONFIGURATION VARIABLES
 #####################################################
 JSONFile = 'None'
-importpath = "."
-targetdir = "."
+importpath = "None"
+targetdir = "None"
 preferargs = False
 silent = False
 createdir = False
@@ -707,17 +707,9 @@ def main(args):
     Message_Config(str(args))
     #logger.info("ARGS: " + str(args))
 
-    ##### WE MUST HAVE A CONFIG FILE DEFINED
-    args_JSONFile = str(args.config)
-    if not args_JSONFile == 'None':
-        JSONFile = args_JSONFile
-    else:
-        msg = "You Must specify a JSON configuration file using --config!"
-        Message_Error(msg)
-        ExitStageLeft(404,msg)
-
     ##### Settings from JSON Configuration File
     print()
+    JSONFile = str(args.config)
     Message_Header("Using " + JSONFile)
     getJSONSettings()
 
@@ -796,7 +788,7 @@ if __name__ == "__main__":
 
     # files
     parser.add_argument('--importpath', type=str, metavar="SOURCE_CONFIG_PATH", help='Import a local config example path',default='None')
-    parser.add_argument('--config', type=str, metavar="JSON_CONFIG_FILE", help='JSON Configuration File',default='None')
+    parser.add_argument('--config', type=str, metavar="JSON_CONFIG_FILE", help='JSON Configuration File',default='None',required=True)
     parser.add_argument('--target', type=str, metavar="MARLIN_ROOT_DIR", help='The directory in which the files will be saved. Default is current directory. Usually this is the directory platformio.ini is in.',default='None')
     
     # boolean
@@ -810,7 +802,6 @@ if __name__ == "__main__":
     parser.add_argument('--prefer', type=str, help='Prefer either the JSON config, or the command-line when there is a conflict.', choices=['config','args'],default='args')
     parser.add_argument('--missing', type=str, help='Add missing directives instead of skipping them. Default: skip.', choices=['add','skip'], default='skip')
     parser.add_argument('--mode', type=str, help='Batch mode will skip all prompts except preference. Interactive mode will present choices when conflicts arise.', choices=['batch','interactive'], default='interactive')
-    #parser.add_argument('--opmode', type=str, help='In import mode we read marlin files and save them to a json file. In export mode we ', choices=['batch','interactive'], default='interactive')
     
     # process args & read from conf file if set
     args = parser.parse_args()
