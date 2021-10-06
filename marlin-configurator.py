@@ -3,6 +3,7 @@
 ##### Author: James Swart (mydevpeeps)
 ##### Contributors: The-EG, p3p
 ##### Repository: https://github.com/mydevpeeps/marlin-configurator
+##### Best Regex Site EVER: https://regex101.com/
 ##### Change Log:
 #####    0.1 - Original PowerShell version.
 #####    0.2 - Basic port from original PowerShell to Python.
@@ -18,13 +19,11 @@ from requests.exceptions import ConnectionError
 from requests.adapters import HTTPAdapter
 import datetime
 from datetime import datetime, timedelta, date
-#from json_checker import Checker
 from jsonschema import validate, ValidationError, SchemaError
 import json
 import sys
 import argparse
 import os
-#import os.path
 import time
 import logging
 import array
@@ -59,12 +58,17 @@ year = today.year
 ##### CONFIGURATION VARIABLES
 #####################################################
 ConfigFile = '.\examples\Creality\CR10 S5\CrealityV1\cr10s5_bl_touch-btt_smart_filament-v2.2_silent_board.json'
+importpath = "."
 MarlinRoot = "."
-GitResetHard = False
+targetdir = "."
 preferargs = False
 silent = False
 createdir = False
 useconfig = False
+missing = "skip"
+mode = "batch"
+prefer = "args"
+validate = False
 options = []
 options_enable = []
 options_disable = []
@@ -228,7 +232,6 @@ def validateJSON(JFILE):
 def getJSONSettings():
     logger.debug("getJSONSettings()")
     Message_Header("Processing Settings from JSON")
-    global GitResetHard
     global silent
     global createdir
     global MarlinRoot
@@ -242,12 +245,6 @@ def getJSONSettings():
             if "settings" in rdata:
                 with open(ConfigFile,encoding="utf8") as f:
                     sdata = json.load(f)['settings']
-                    if "gitreset" in sdata:
-                        if not (sdata.get('gitreset') is None):
-                            GitResetHard = sdata['gitreset']
-                            Message_Config("  GitResetHard: " + str(GitResetHard))
-                        else:
-                            Message_Error("JSON setting gitreset is missing a value")
                     if "silent" in sdata:
                         if not (sdata.get('silent') is None):
                             silent = sdata['silent']
@@ -637,12 +634,42 @@ def updateValues():
 ##### MAIN
 #####################################################
 def main(args):
-    #Hello World!
-    intro()
+    global preferargs
+    global silent
+    global createdir
+    global useconfig
+    global files
+    global path
+    global branch
+    global URL
+    global importpath
+    global missing
+    global mode
+    global prefer
+    global validate
+    global ConfigFile
+    global MarlinRoot
+
+    intro() #Hello World!
 
     # parse args
-    print(args)
-
+    # Namespace(config=None, createdir='false', import=None, missing='skip', mode='batch', prefer='args', silent='false', target='.', validate='false')
+    # https://realpython.com/python-namespaces-scope/
+    createdir = args.createdir
+    importpath = str(args.importpath)
+    missing = str(args.missing)
+    mode = str(args.mode)
+    prefer = str(args.prefer)
+    if prefer == "args":
+        preferargs = True
+    silent = args.silent
+    if str(args.target) != "None":
+        targetdir = str(args.target)
+        MarlinRoot = str(args.target)
+    validate = args.validate
+    if str(args.config) != "None":
+            ConfigFile = str(args.config)
+    
     # get data from JSON Config
     Message_Header("Using " + ConfigFile)
     getJSONSettings()
@@ -660,20 +687,23 @@ def main(args):
     # Exit gracefully
     outro()
 
+#####################################################
+##### SETUP COMMAND-LINE ARGUMENTS & HELP
+#####################################################
+
 # parse out the args (also create --help output) and then pass to main function
 # https://docs.python.org/3/library/argparse.html
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Builds Configuration Files from the Marlin Examples Online')
-    parser.add_argument('--target', type=str, help='The directory in which the files will be saved. Default is current directory.')
+    parser.add_argument('--importpath', type=str, help='Import a local file or config example path')
     parser.add_argument('--config', type=str, help='JSON Configuration File')
-    parser.add_argument('--import', type=str, help='Import a local file or config example path')
-    parser.add_argument('--validate', type=str, help='Validate JSON Configuration file syntax.', choices=['true','false'])
-    parser.add_argument('--createdir', type=str, help='Creates the target directory if it does not exist.', choices=['true','false'])
-    parser.add_argument('--silent', type=str, help='Suppress Configuration Change Information. Default: false', choices=['true','false'])
-    parser.add_argument('--prefer', type=str, help='Prefer either the JSON config, or the command-line when there is a conflict.', choices=['config','args'])
-    parser.add_argument('--missing', type=str, help='Add missing directives instead of skipping them. Default: skip.', choices=['add','skip'])
-    parser.add_argument('--mode', type=str, help='Batch mode will skip all prompts. Interactive mode will present choices.', choices=['batch','interactive'])
-    
+    parser.add_argument('--target', type=str, help='The directory in which the files will be saved. Default is current directory.')
+    parser.add_argument('--validate', type=str, help='Validate JSON Configuration file syntax.', choices=['true','false'],default='false')
+    parser.add_argument('--createdir', type=str, help='Creates the target directory if it does not exist.', choices=['true','false'],default='false')
+    parser.add_argument('--silent', type=str, help='Suppress Configuration Change Information. Default: false', choices=['true','false'],default='false')
+    parser.add_argument('--prefer', type=str, help='Prefer either the JSON config, or the command-line when there is a conflict.', choices=['config','args'],default='args')
+    parser.add_argument('--missing', type=str, help='Add missing directives instead of skipping them. Default: skip.', choices=['add','skip'], default='skip')
+    parser.add_argument('--mode', type=str, help='Batch mode will skip all prompts. Interactive mode will present choices.', choices=['batch','interactive'], default='batch')
     args = parser.parse_args()
 
     # Do something with it

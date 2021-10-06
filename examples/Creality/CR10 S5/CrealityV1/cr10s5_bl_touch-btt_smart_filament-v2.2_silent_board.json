@@ -4,7 +4,6 @@
     "description": "This section can be removed for production files. It's here to explain the JSON file",
     "special_characters": "You must use \\ for a backslash or other special characters in JSON.",
     "settings": {
-      "gitreset" : "default: false",
       "silent" : "default: false",
       "createdir" : "default: false",
       "marlinroot" : "Path to your marlin root distro. You must use \\ for a backslash or other special characters in JSON. See --targetdir."
@@ -21,7 +20,6 @@
     }
   },
   "settings": {
-    "gitreset" : false,
     "silent" : false,
     "createdir" : false,
     "marlinroot" : "D:/localadmin/Documents/marlin_build/Git-Marlin"
