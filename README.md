@@ -47,7 +47,10 @@ Defer to `py marlin-configuration.py --help` for assistance with all of the comm
 
 ### Argument Configuration File
 _Online Reference_: https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
+
 **filename**: _marlin-configuration.ini_
+
+** USING THIS FILE WILL IGNORE ALL OTHER PASSED PARAMETERS **
 
 This file can be used in place of using command-line arguments. The format of the file is:
 ```
