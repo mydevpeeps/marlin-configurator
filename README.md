@@ -20,32 +20,6 @@ The user community can contribute their .json files to the repo under the contri
 ## Command-Line Arguments
 Defer to `py marlin-configuration.py --help` for assistance with all of the command line arguments.
 
-```
-  -h, --help            show this help message and exit
-  --importpath SOURCE_CONFIG_PATH
-                        Import a local file or config example path
-  --config JSON_CONFIG_FILE
-                        JSON Configuration File
-  --target MARLIN_ROOT_DIR
-                        The directory in which the files will be saved. Default is current directory. Usually this is the      
-                        directory platformio.ini is in.
-  --argsfile {True,False}
-                        Uses marlin-configurator.ini. !! Using this file overrides all other args on the command-line !!       
-  --force {True,False}  Forces running in batch mode, removing all prompts & preferring args over configuration values
-  --validate {True,False}
-                        Validate JSON Configuration file syntax.
-  --createdir {True,False}
-                        Creates the target directory if it does not exist.
-  --silent {True,False}
-                        Suppress Configuration Change Information. Default: false
-  --prefer {config,args}
-                        Prefer either the JSON config, or the command-line when there is a conflict.
-  --missing {add,skip}  Add missing directives instead of skipping them. Default: skip.
-  --mode {batch,interactive}
-                        Batch mode will skip all prompts except preference. Interactive mode will present choices when
-                        conflicts arise.
-```
-
 ### Argument Configuration File
 _Online Reference_: [Python Argparse](https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars)
 
@@ -88,7 +62,7 @@ options|||_directives adjusted in Configuration.h and Configuration_Adv.h._
 {  
   "settings": {
     "silent" : true,
-    "targetdir" : "D:/localadmin/Documents/marlin_build/Git-Marlin",
+    "targetdir" : "user/custom_configs",
     "prefer": "args"
   },
   "useExample": {
