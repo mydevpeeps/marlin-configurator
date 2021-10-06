@@ -156,10 +156,17 @@ def ExitStageLeft(CODE,MSG):
 
 def intro():
     # intro
+    plat = getPlatform()
+    uname = getUName()
+
     print()
     msg = "marlin-configurator v" + str(version) + " - Copyright DevPeeps " + str(year)
+    if plat == 'Windows':
+        msg += " (" + str(getPlatform()) + ")"
+    else:
+        msg += " (" + str(getPlatform()) + " " + str(getUName()) + ")"
     logger.info(msg); Message_Header(msg)
-
+    
     # setup debug state
     if debug:
         logger.setLevel(logging.DEBUG)   #Set the threshold of logger to DEBUG 
@@ -194,16 +201,24 @@ def isDir(d):
     return os.path.isdir(d)
 
 def pathExists(p):
+    # this seems to be broken on windows??
     return os.path.exists(p)
 
 def getFileList(p):
     return os.listdir(p)
 
 def getPlatform():
-    return os.name
+    plat = os.name
+    if plat == "nt":
+        return "Windows"
+    else:
+        return os.name
 
 def getUName():
-    return os.uname()
+    if not getPlatform() == "Windows":
+        return os.uname()
+    else:
+        return ""
 
 def getCWD():
     return os.getcwd()
@@ -213,10 +228,7 @@ def chDir(d):
 
 def removeROFlag(t):
     try:
-        os.chmod(
-            t,
-            stat.S_IWRITE
-        )
+        os.chmod(t,stat.S_IWRITE)
     except IOError as ioe: ##error message
         print(ioe)
         ExitStageLeft(500,"IOError occured removing read-only flag for  " + str(t))
@@ -226,7 +238,8 @@ def removeROFlag(t):
 
 def mkDir(d):
     try:
-        os.mkdir(d)
+        os.makedirs(d)
+        removeROFlag(d)
     except IOError as ioe: ##error message
         print(ioe)
         ExitStageLeft(500,"IOError occured making directory " + str(d))
@@ -236,6 +249,7 @@ def mkDir(d):
 
 def rmDir(d):
     try:
+        removeROFlag(d)
         os.rmdir(d)
     except IOError as ioe: ##error message
         print(ioe)
@@ -265,6 +279,7 @@ def exec(cmd):
 
 def rename(old,new):
     try:
+        removeROFlag(old)
         os.rename(old,new)
     except IOError as ioe: ##error message
         print(ioe)
@@ -304,31 +319,32 @@ def getJSONSettings():
     global f_config_adv
 
     try:
-        with open(JSONFile,encoding="utf8") as r:
-            rdata = json.load(r)
-            if "settings" in rdata:
-                with open(JSONFile,encoding="utf8") as f:
-                    sdata = json.load(f)['settings']
-                    if "silent" in sdata:
-                        if not (sdata.get('silent') is None):
-                            silent = sdata['silent']
-                            Message_Config("  silent: " + str(silent))
-                        else:
-                            Message_Error("JSON setting silent is missing a value")
-                    if "prefer" in sdata:
-                        if not (sdata.get('prefer') is None):
-                            prefer = sdata['prefer']
-                            Message_Config("  prefer: " + str(prefer))
-                        else:
-                            Message_Error("JSON setting createdir is missing a value")
-                    if "targetdir" in sdata:
-                        if not (sdata.get('targetdir') is None):
-                            targetdir = sdata['targetdir']
-                            Message_Config("  targetdir: " + str(targetdir))
-                            f_config = targetdir + "/Marlin/Configuration.h"
-                            f_config_adv = targetdir + "/Marlin/Configuration_Adv.h"
-                        else:
-                            Message_Error("JSON setting targetdir is missing a value")
+        if isFile(JSONFile):
+            with open(JSONFile,encoding="utf8") as r:
+                rdata = json.load(r)
+                if "settings" in rdata:
+                    with open(JSONFile,encoding="utf8") as f:
+                        sdata = json.load(f)['settings']
+                        if "silent" in sdata:
+                            if not (sdata.get('silent') is None):
+                                silent = sdata['silent']
+                                Message_Config("  silent: " + str(silent))
+                            else:
+                                Message_Error("JSON setting silent is missing a value")
+                        if "prefer" in sdata:
+                            if not (sdata.get('prefer') is None):
+                                prefer = sdata['prefer']
+                                Message_Config("  prefer: " + str(prefer))
+                            else:
+                                Message_Error("JSON setting createdir is missing a value")
+                        if "targetdir" in sdata:
+                            if not (sdata.get('targetdir') is None):
+                                targetdir = sdata['targetdir']
+                                Message_Config("  targetdir: " + str(targetdir))
+                                f_config = targetdir + "/Marlin/Configuration.h"
+                                f_config_adv = targetdir + "/Marlin/Configuration_Adv.h"
+                            else:
+                                Message_Error("JSON setting targetdir is missing a value")
     except IOError as ioe: ##error message
         Message_Exception("IOError Occured in getJSONSettings",ioe)
         print(ioe)
@@ -349,36 +365,30 @@ def getJSONConfig():
     global targetdir
 
     try:
-        with open(JSONFile,encoding="utf8") as r:
-            rdata = json.load(r)
-            if "useExample" in rdata:
-                with open(JSONFile,encoding="utf8") as f:
-                    sdata = json.load(f)['useExample']
-                    if "branch" in sdata:
-                        if not (sdata.get('branch') is None):
-                            branch = sdata['branch']
-                            Message_Config("  branch: " + str(branch))
-                        else:
-                            Message_Error("JSON useExample branch is missing a value")
-                    if "path" in sdata:
-                        if not (sdata.get('path') is None):
-                            path = sdata['path']
-                            Message_Config("  path: " + str(path))
-                        else:
-                            Message_Error("JSON useExample path is missing a value")
-                    if "files" in sdata:
-                        if not (sdata.get('files') is None):
-                            files = sdata['files']
-                            for name in files:
-                                Message_Config("     downloading " + str(name) + " from " + URL + " to " + str(targetdir) + "/Marlin")
-                                furl = URL + "/" + name
-                                lfilename = targetdir + "/Marlin/" + name
-                                rmFile(lfilename) # remove old file first .. NO CACHING!
-                                lfile=open(lfilename, mode="w", encoding="utf-8")
-                                lfile.write(getWebFile(furl))
-                                lfile.close()
-                        else:
-                            Message_Error("JSON useExample files is missing a value")
+        if isFile(JSONFile):
+            with open(JSONFile,encoding="utf8") as r:
+                rdata = json.load(r)
+                if "useExample" in rdata:
+                    with open(JSONFile,encoding="utf8") as f:
+                        sdata = json.load(f)['useExample']
+                        if "branch" in sdata:
+                            if not (sdata.get('branch') is None):
+                                branch = sdata['branch']
+                                Message_Config("  branch: " + str(branch))
+                            else:
+                                Message_Error("JSON useExample branch is missing a value")
+                        if "path" in sdata:
+                            if not (sdata.get('path') is None):
+                                path = sdata['path']
+                                Message_Config("  path: " + str(path))
+                            else:
+                                Message_Error("JSON useExample path is missing a value")
+                        if "files" in sdata:
+                            if not (sdata.get('files') is None):
+                                files = sdata['files']
+                                Message_Config("  files: " + str(files))
+                            else:
+                                Message_Error("JSON useExample files is missing a value")
     except IOError as ioe: ##error message
         Message_Exception("IOError Occured in getJSONConfig",ioe)
         print(ioe)
@@ -409,23 +419,24 @@ def getJSONOptions():
     Message_Config("   Using " + f_config_adv)
 
     try:
-        with open(JSONFile,encoding="utf8") as r:
-            rdata = json.load(r)
-            if "options" in rdata:
-                with open(JSONFile,encoding="utf8") as f:
-                    options = json.load(f)['options']
-                    if "enable" in options:
-                        if (len(options['enable']) > 0):
-                            options_enable = json.loads(json.dumps(options['enable'], sort_keys=True))
-                    if "disable" in options:
-                        if (len(options['disable']) > 0):
-                            options_disable = json.loads(json.dumps(options['disable'], sort_keys=True))
-                    if "values" in options:
-                        if (len(options['values']) > 0):
-                            options_values = json.loads(json.dumps(options['values'], sort_keys=True))
-                    logger.debug("Enabled:" + str(options_enable))
-                    logger.debug("Disabled:" + str(options_disable))
-                    logger.debug("Values:" + str(options_values))
+        if isFile(JSONFile):
+            with open(JSONFile,encoding="utf8") as r:
+                rdata = json.load(r)
+                if "options" in rdata:
+                    with open(JSONFile,encoding="utf8") as f:
+                        options = json.load(f)['options']
+                        if "enable" in options:
+                            if (len(options['enable']) > 0):
+                                options_enable = json.loads(json.dumps(options['enable'], sort_keys=True))
+                        if "disable" in options:
+                            if (len(options['disable']) > 0):
+                                options_disable = json.loads(json.dumps(options['disable'], sort_keys=True))
+                        if "values" in options:
+                            if (len(options['values']) > 0):
+                                options_values = json.loads(json.dumps(options['values'], sort_keys=True))
+                        logger.debug("Enabled:" + str(options_enable))
+                        logger.debug("Disabled:" + str(options_disable))
+                        logger.debug("Values:" + str(options_values))
     except IOError as ioe: ##error message
         Message_Exception("IOError Occured in getJSONOptions",ioe)
         print(ioe)
@@ -437,7 +448,33 @@ def getJSONOptions():
 #####################################################
 ##### FUNCTIONS - WEB REQUESTS
 #####################################################
+# goes through the list of files to request them from the internet
+def getExampleFiles():
+    global targetdir
+    global path
+    global files
+    global URL
 
+    try:
+        # sanitize targetdir first
+        if pathExists(targetdir):
+            removeROFlag(targetdir)
+        for name in files:
+            Message_Config("     downloading " + str(name) + " from " + URL + " to " + str(targetdir) + "/Marlin")
+            furl = URL + "/" + name
+            lfilename = targetdir + "/Marlin/" + name
+            #rmFile(lfilename) # remove old file first .. NO CACHING!
+            lfile=open(lfilename, mode="w", encoding="utf-8")
+            lfile.write(getWebFile(furl))
+            lfile.close()
+    except IOError as ioe: ##error message
+        Message_Exception("IOError Occured in getExampleFiles",ioe)
+        print(ioe)
+    except Exception as e: ##error message
+        Message_Exception("Exception Occured in getExampleFiles",e)
+        print(e)
+
+# gets one file at a time from the internet
 def getWebFile(URL):
     errorCode = 0
 
@@ -736,6 +773,8 @@ def main(args):
     global validate
     global JSONFile
     global targetdir
+    global path # Creality/CR-10 S5/CrealityV1
+    global branch # bugfix-2.0.x
     opmode = "export"
 
     ##### process args
@@ -763,10 +802,12 @@ def main(args):
     args_prefer = str(args.prefer)
     args_JSONFile = str(args.config)
     args_importpath = str(args.importpath)
-    
-    ## special stuffs for the targetdir
+
+    # special processing for the target dir
+    # default to user/branch/path(/Marlin)
     args_targetdir = str(args.target)
-    marlindir = targetdir + "/Marlin"
+    if targetdir == 'None':
+        targetdir = str("user/" + branch + "/" + path).replace(" ","_")
     
     ##### resolve conficts
     # if there is a mode/prefer conflict we must resolve this regardless of any setting
@@ -787,9 +828,11 @@ def main(args):
         if args_targetdir != 'None':
             if targetdir != args_targetdir:
                 targetdir = multi_choice_question([targetdir,args_targetdir],'Target Directory ? ','Settings Conflict --target')
+                marlindir = targetdir + "/Marlin"
                 if not isDir(marlindir):
+                    Message_Warning('Target Directory " + marlindir + " does not exist.')
                     if not createdir:
-                        Message_Warning('Target Directory does not exist. The --createdir option is disabled. This must be enabled to continue.')
+                        Message_Warning('The --createdir option is disabled. This must be enabled to continue.')
                         createdir = eval(multi_choice_question(['True','False'],'Create Target Directory ? ','Settings Conflict --createdir'))
                     if not createdir:
                         ExitStageLeft(404,"Target Directory does not exist. Operation Cancelled by user.")
@@ -810,6 +853,9 @@ def main(args):
 
     ##### JSON Example Configuration Information
     getJSONConfig()
+
+    ##### Download Example Files from the Internet (if not using a local path)
+    getExampleFiles()
 
     ##### Configuration Directives from JSON Configuration File
     getJSONOptions()
