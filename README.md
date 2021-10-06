@@ -50,12 +50,14 @@ _Online Reference_: https://docs.python.org/3/library/argparse.html#fromfile-pre
 **filename**: _marlin-configuration.ini_
 
 This file can be used in place of using command-line arguments. The format of the file is:
-```--option
+```
+--option
 option_value
 ```
 
 For example, if you wanted to enable --silent by default (the default is False) your file would look like this:
-```--silent
+```
+--silent
 True
 ```
 
