@@ -48,7 +48,7 @@ Defer to `py marlin-configuration.py --help` for assistance with all of the comm
 ### Argument Configuration File
 _Online Reference_: https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars
 
-**filename**: _marlin-configuration.ini_
+**filename**: _marlin-configurator.ini_
 
 ** USING THIS FILE WILL IGNORE ALL OTHER PASSED PARAMETERS **
 
@@ -72,10 +72,13 @@ True
    - `disable`
    - `values`
 
-## Directories
-- **contrib** _JSON Configuration files provided by the community._
-- **examples** _Direct extractions of the Marlin Configuration Repo(s)._
-- **user** _Your JSON Configuration files for your printers._
+## Structure (Files & Directories)
+- `contrib` _JSON Configuration files provided by the community._
+- `examples` _Direct extractions of the Marlin Configuration Repo(s)._
+- `user` _Your JSON Configuration files for your printers._
+- `README.md` _README for the project_
+- `marlin-configurator.ini` _Command-Line Argument Configuration File_
+- `marlin-configurator.py` _Python program for this project_
 
 ## Requirements
 - Marlin Build Environment (has Python already) or python environment.
