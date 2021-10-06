@@ -24,6 +24,7 @@ import json
 import sys
 import argparse
 import os
+import stat
 import time
 import logging
 import array
@@ -103,7 +104,7 @@ logger.setLevel(logging.INFO)   #Set the initial logger threshold (values: INFO 
 
 
 #####################################################
-##### FUNCTIONS - MESSAGING
+##### FUNCTIONS - MESSAGING & LOGGING
 #####################################################
 
 def Message(MSG):
@@ -128,8 +129,13 @@ def Message_Header(MSG):
 
 def Message_Debug(MSG):
     if debug:
-            print(Style.BRIGHT + Fore.MAGENTA + str(MSG))
+        print(Style.BRIGHT + Fore.MAGENTA + str(MSG))
     logger.debug(MSG)
+
+def Message_Exception(MSG,e):
+    print(Style.BRIGHT + Fore.MAGENTA + str(MSG))
+    logger.critical(MSG)
+    logger.exception(e)
 
 #####################################################
 ##### FUNCTIONS - CORE
@@ -180,17 +186,6 @@ def multi_choice_question(options: list,msg,title):
         print()
     #logger.info("Question Response: " + title + "|" + msg + "|" + options[answer-1])    
 
-def rmFile(filepath):
-    try:
-        if os.path.exists(filepath):
-            os.remove(filepath)
-            msg = 'removed ' + str(filepath)
-            logger.debug(msg)
-            #Message('    ' + msg)
-    except:
-        Message_Error('Error removing ' + str(filepath))
-        logger.error(msg)
-
 def isFile(f):
     return os.path.isfile(f)
 
@@ -215,22 +210,67 @@ def getCWD():
 def chDir(d):
     os.chdir(d)
 
+def removeROFlag(t):
+    try:
+        os.chmod(
+            t,
+            stat.S_IWRITE
+        )
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured removing read-only flag for  " + str(t))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured removing read-only flag for " + str(t))
+
 def mkDir(d):
-    os.mkdir(d)
+    try:
+        os.mkdir(d)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured making directory " + str(d))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured making directory " + str(d))
 
 def rmDir(d):
-    os.rmdir(d)
+    try:
+        os.rmdir(d)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured removing directory " + str(d))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured Removing Directory " + str(d))
 
 def rmFile(f):
-    os.remove(f)
+    try:
+        os.remove(f)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured removing file " + str(f))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured removing file " + str(f))
 
 def exec(cmd):
     # os.system(cmd)
     # subprocess.run(["ping","-c 3", "example.com"])
-    subprocess.run(cmd)
+    try:
+        subprocess.run(cmd)
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured running command " + str(cmd))
 
 def rename(old,new):
-    os.rename(old,new)
+    try:
+        os.rename(old,new)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured renaming " + str(old) + " to " + str(new))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured renaming " + str(old) + " to " + str(new))
 
 #####################################################
 ##### FUNCTIONS - JSON PARSING
@@ -305,6 +345,7 @@ def getJSONConfig():
     global files
     global URL
     global JSONFile
+    global targetdir
 
     try:
         with open(JSONFile,encoding="utf8") as r:
@@ -328,7 +369,7 @@ def getJSONConfig():
                         if not (sdata.get('files') is None):
                             files = sdata['files']
                             for name in files:
-                                Message_Config("     downloading " + str(name) + " from " + URL)
+                                Message_Config("     downloading " + str(name) + " from " + URL + " to " + str(targetdir) + "/Marlin")
                                 furl = URL + "/" + name
                                 lfilename = targetdir + "/Marlin/" + name
                                 rmFile(lfilename) # remove old file first .. NO CACHING!
@@ -484,7 +525,6 @@ def getDirective(directive,test_str):
             results[groupNum-1] = match.group(groupNum)
 
     return results
-
 
 # enable a directive
 def enableDirectives():
@@ -713,9 +753,6 @@ def main(args):
     Message_Header("Using " + JSONFile)
     getJSONSettings()
 
-    ##### JSON Example Configuration Information
-    getJSONConfig()
-
     ## boolean (assign directly to globals as an override)
     validate = eval(args.validate)
     silent = eval(args.silent)
@@ -723,13 +760,15 @@ def main(args):
     createdir = eval(args.createdir)
 
     ## strings
-    
     args_missing = str(args.missing)
     args_mode = str(args.mode)
     args_prefer = str(args.prefer)
-    args_targetdir = str(args.target)
     args_JSONFile = str(args.config)
     args_importpath = str(args.importpath)
+    
+    ## special stuffs for the targetdir
+    args_targetdir = str(args.target)
+    marlindir = targetdir + "/Marlin"
     
     ##### resolve conficts
     # if there is a mode/prefer conflict we must resolve this regardless of any setting
@@ -749,7 +788,16 @@ def main(args):
             missing = multi_choice_question(['add','skip'],'Add or Skip missing directives ? ','Settings Conflict --missing')    
         if args_targetdir != 'None':
             if targetdir != args_targetdir:
-                targetdir = multi_choice_question([targetdir,args_targetdir],'Target Directory ? ','Settings Conflict --target')    
+                targetdir = multi_choice_question([targetdir,args_targetdir],'Target Directory ? ','Settings Conflict --target')
+                if not isDir(marlindir):
+                    if not createdir:
+                        Message_Warning('Target Directory does not exist. The --createdir option is disabled. This must be enabled to continue.')
+                        createdir = eval(multi_choice_question(['True','False'],'Create Target Directory ? ','Settings Conflict --createdir'))
+                    if not createdir:
+                        ExitStageLeft(404,"Target Directory does not exist. Operation Cancelled by user.")
+                    if createdir:
+                        Message_Config("Creating Target Directory: " + str(marlindir))
+                        mkDir(marlindir)
         if args_importpath != 'None':
             if importpath != args_importpath:
                 importpath = multi_choice_question([importpath,args_importpath],'Import Local Configuration Path ? ','Settings Conflict --importpath')    
@@ -761,6 +809,9 @@ def main(args):
         if args_missing != missing:
             if prefer == "args":
                 missing = args_missing
+
+    ##### JSON Example Configuration Information
+    getJSONConfig()
 
     ##### Configuration Directives from JSON Configuration File
     getJSONOptions()
