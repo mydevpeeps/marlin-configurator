@@ -18,7 +18,7 @@ There is an _example.json_ included in this repo under the _user_ directory. Eve
 The user community can contribute their .json files to the repo under the contrib folder. 
 
 ## Command-Line Arguments
-Defer to `py marlin-configuration.py --help` for assistance with all of the command line arguments.
+Defer to `py marlin-configurator.py --help` for assistance with all of the command line arguments.
 
 ### Argument Configuration File
 _Online Reference_: [Python Argparse](https://docs.python.org/3/library/argparse.html#fromfile-prefix-chars)
