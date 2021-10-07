@@ -6,7 +6,7 @@
   },
   "useExample": {
     "branch" : "bugfix-2.0.x",
-    "path" : "Creality/CR-10 S5/CrealityV1",
+    "path" : "/config/examples/Creality/CR-10 S5/CrealityV1",
     "files" : ["Configuration.h","Configuration_adv.h","_Bootscreen.h","_Statusscreen.h"]
   },
   "options": {

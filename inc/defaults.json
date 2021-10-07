@@ -1,0 +1,19 @@
+{
+    "JSONFile" : "user/example.json",
+    "importpath" : ".",
+    "missing" : "skip",
+    "mode" : "interactive",
+    "prefer" : "args",
+    "path" : "None",
+    "branch" : "None",
+    "URL" : "None",
+    "preferargs" : false,
+    "silent" : false,
+    "createdir" : false,
+    "useconfig" : false,
+    "validate" : false,
+    "branch" : "release-2.0.9.2",
+    "path" : "/config/default",
+    "files" : ["Configuration.h","Configuration_adv.h","_Bootscreen.h","_Statusscreen.h"],
+    "targetdir" : "."
+}

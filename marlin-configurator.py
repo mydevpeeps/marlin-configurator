@@ -19,7 +19,7 @@ from requests.exceptions import ConnectionError
 from requests.adapters import HTTPAdapter
 import datetime
 from datetime import datetime, timedelta, date
-from jsonschema import validate, ValidationError, SchemaError
+#from jsonschema import validate, ValidationError, SchemaError
 import json
 import sys
 import argparse
@@ -58,6 +58,7 @@ year = today.year
 #####################################################
 ##### CONFIGURATION VARIABLES
 #####################################################
+# globals where the settings are stored
 JSONFile = 'None'
 importpath = "None"
 targetdir = "None"
@@ -76,9 +77,9 @@ options_values = []
 files = ['Configuration.h', 'Configuration_adv.h']
 f_config = targetdir + "/Marlin/Configuration.h"
 f_config_adv = targetdir + "/Marlin/Configuration_Adv.h"
-path = "Creality/CR-10 S5/CrealityV1"
+path = "/config/examples/Creality/CR-10 S5/CrealityV1"
 branch = "bugfix-2.0.x"
-URL = "https://raw.githubusercontent.com/MarlinFirmware/Configurations/" + branch + "/config/examples/" + path
+URL = "https://raw.githubusercontent.com/MarlinFirmware/Configurations/" + branch + path
 
 #####################################################
 ##### WEB REQUEST SETUP
@@ -134,6 +135,7 @@ def Message_Debug(MSG):
 
 def Message_Exception(MSG,e):
     print(Style.BRIGHT + Fore.MAGENTA + str(MSG))
+    print(Style.BRIGHT + Fore.MAGENTA + str(e))
     logger.critical(MSG)
     logger.exception(e)
     ExitStageLeft(500,MSG)
@@ -362,7 +364,31 @@ def validateJSON(JFILE):
         "required": ["age","name"]
     }
 
-# get and store the settings from the JSON file
+def getDefaults():
+    # defaults to be used for comparison during setting resolutions
+    # pull defaults from json file
+    logger.debug("getJSONSettings()")
+    print()
+    global defaults
+    Message_Header("Processing Default Settings from inc/defaults.json")
+    try:
+         if isFile('inc/defaults.json'):
+            with open('inc/defaults.json',encoding="utf8") as r:
+                defaults = json.load(r)
+                #for key in defaults:
+                #    directive = str(key)
+                #    value = str(options_values[key])
+                #    Message_Config("   " + directive + " = " + value)
+    except IOError as ioe: ##error message
+        Message_Exception("IOError Occured in getDefaults",ioe)
+        print(ioe)
+    except Exception as e: ##error message
+        Message_Exception("Exception Occured in getDefaults",e)
+        print(e)
+    
+    print()
+
+# get and store the settings from the requested JSON file
 def getJSONSettings():
     logger.debug("getJSONSettings()")
     print()
@@ -532,6 +558,7 @@ def getExampleFiles():
 
 # gets one file at a time from the internet
 def getWebFile(URL):
+    global attempt
     errorCode = 0
 
     for rt in range(1,retries+1):
@@ -833,15 +860,21 @@ def main(args):
     global branch # bugfix-2.0.x
     opmode = "export"
 
+    print()
+
+    ##### determine if we are in our own root directory. If not then error out with a message
+    if not isFile('marlin-configurator.py'):
+        ExitStageLeft(500,"marlin-configurator.py MUST be run from it's root directory!")
+
     ##### process args
     # https://realpython.com/python-namespaces-scope/
-    print()
     Message_Header("Processing Command-Line Arguments")
     Message_Config(str(args))
     #logger.info("ARGS: " + str(args))
 
     ##### Settings from JSON Configuration File
     print()
+    getDefaults()   # get default values for globals
     JSONFile = str(args.config)
     Message_Header("Using " + JSONFile)
     getJSONSettings()
@@ -899,12 +932,17 @@ def main(args):
             if importpath != args_importpath:
                 importpath = multi_choice_question([importpath,args_importpath],'Import Local Configuration Path ? ','Settings Conflict --importpath')    
     else:
-        Message_Warning("Batch Mode Enabled. All Conflicts will defer to " + prefer + " if set, otherwise to default (if any).")
+        # we are in batch mode so we need to force values
+        # must check for preferences first (args or config)
         if args_prefer != prefer:
             if prefer == "args":
                 prefer = args_prefer
-        if args_missing != missing:
-            if prefer == "args":
+        Message_Warning("Batch Mode Enabled. All Conflicts will defer to " + prefer + " if set, otherwise to default (if any).")
+        
+        # adjust everything that is in conflict if it doesnt match what was passed to args
+        # if its prefer to config then there is nothing to set from args
+        if prefer == "args":
+            if args_missing != missing:
                 missing = args_missing
 
     ##### JSON Example Configuration Information
