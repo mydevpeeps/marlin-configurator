@@ -110,7 +110,7 @@ options|||_directives adjusted in Configuration.h and Configuration_Adv.h._
   marlin-configurator.py|File|_Python program for this project._
 
 ## Requirements
-- Marlin Build Environment (has Python already) or python environment.
+- Marlin Build Environment (has Python already) or python environment. Developed using [Python 3.8.10](https://www.python.org/downloads/release/python-3810/) (last 3.8 release with a binary).
 
 ## Troubleshooting & Help
 Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the [Marlin Discord](https://discord.gg/n5NJ59y) somewhere. This is not _officially_ a marlin sponsored project - yet. If it ever is, it will become it's own project/repo in Marlin and maintained there.
