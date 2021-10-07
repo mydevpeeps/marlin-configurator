@@ -4,8 +4,6 @@
     "missing" : "skip",
     "mode" : "interactive",
     "prefer" : "args",
-    "path" : "None",
-    "branch" : "None",
     "URL" : "None",
     "preferargs" : false,
     "silent" : false,
