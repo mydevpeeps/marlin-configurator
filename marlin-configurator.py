@@ -195,36 +195,92 @@ def multi_choice_question(options: list,msg,title):
     #logger.info("Question Response: " + title + "|" + msg + "|" + options[answer-1])    
 
 def isFile(f):
-    return os.path.isfile(f)
+    try:
+        return os.path.isfile(f)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured checking for existing file  " + str(f))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured checking for existing file  " + str(f))
 
 def isDir(d):
-    return os.path.isdir(d)
+    try:
+        return os.path.isdir(d)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured checking for existing directory  " + str(d))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured checking for existing directory  " + str(d))
 
 def pathExists(p):
     # this seems to be broken on windows??
-    return os.path.exists(p)
+    try:
+        return os.path.exists(p)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured checking for existing path  " + str(p))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured checking for existing path  " + str(p))
 
 def getFileList(p):
-    return os.listdir(p)
+    try:
+        return os.listdir(p)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured listing directory  " + str(p))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured listing directory " + str(p))
 
 def getPlatform():
-    plat = os.name
-    if plat == "nt":
-        return "Windows"
-    else:
-        return os.name
+    try:
+        plat = os.name
+        if plat == "nt":
+            return "Windows"
+        else:
+            return os.name
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured getting operating system information.")
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured getting operating system information.")
 
 def getUName():
-    if not getPlatform() == "Windows":
-        return os.uname()
-    else:
-        return ""
+    try:
+        if not getPlatform() == "Windows":
+            return os.uname()
+        else:
+            return ""
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured getting operating system information.")
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured getting operating system information.")
 
 def getCWD():
-    return os.getcwd()
+    try:
+        return os.getcwd()
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured getting current working directory.")
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured getting current working directory.")
 
 def chDir(d):
-    os.chdir(d)
+    try:
+        os.chdir(d)
+    except IOError as ioe: ##error message
+        print(ioe)
+        ExitStageLeft(500,"IOError occured changing directory to " + str(d))
+    except Exception as e: ##error message
+        print(e)
+        ExitStageLeft(500,"Exception occured changing directory to " + str(d))
 
 def removeROFlag(t):
     try:
