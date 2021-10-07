@@ -113,4 +113,4 @@ options|||_directives adjusted in Configuration.h and Configuration_Adv.h._
 - Marlin Build Environment (has Python already) or python environment.
 
 ## Troubleshooting & Help
-Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the [Marlin Discord](https://discord.gg/ARyMeuBV) somewhere. This is not _officially_ a marlin sponsored project - yet. If it ever is, it will become it's own project/repo in Marlin and maintained there.
+Please do not reach out to individuals for assistance with this project. Use the Issues section if you run into problems. Most likely we can be found on the [Marlin Discord](https://discord.gg/n5NJ59y) somewhere. This is not _officially_ a marlin sponsored project - yet. If it ever is, it will become it's own project/repo in Marlin and maintained there.
