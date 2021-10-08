@@ -591,6 +591,9 @@ def getWebFile(URL):
                     else:
                         attempt = 1
                         break
+                else:
+                    attempt = 1
+                    break
             else:
                 errorCode = r.status_code
             logger.critical('Query Error')
