@@ -4,9 +4,28 @@
 ##### Contributors: The-EG, p3p
 ##### Repository: https://github.com/mydevpeeps/marlin-configurator
 ##### Best Regex Site EVER: https://regex101.com/
+#####
 ##### Change Log:
 #####    0.1 - Original PowerShell version.
 #####    0.2 - Basic port from original PowerShell to Python.
+#####    0.3 - Added lots of error trapping logic & --option features.
+#####
+#####################################################################################
+#####################################################################################
+#####
+##### This program is free software: you can redistribute it and/or modify
+##### it under the terms of the GNU General Public License as published by
+##### the Free Software Foundation, either version 3 of the License, or
+##### (at your option) any later version.
+#####
+##### This program is distributed in the hope that it will be useful,
+##### but WITHOUT ANY WARRANTY; without even the implied warranty of
+##### MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##### GNU General Public License for more details.
+#####
+##### You should have received a copy of the GNU General Public License
+##### along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#####
 #####################################################################################
 
 #####################################################
@@ -41,7 +60,8 @@ init(autoreset=True)
 ##### FRAMEWORK VARIABLES
 #####################################################
 debug = False						# set debug on or off
-version = "0.12"	    			# set to revision # as above
+version = "0.3-alpha"    			# set to revision # as above
+repourl = "https://github.com/mydevpeeps/marlin-configurator"
 ctimeout = 60						# connection timeout
 dtimeout = 60						# data transfer timeout
 sslverify = True					# verify ssl cert
@@ -81,6 +101,7 @@ path = "/config/examples/Creality/CR-10 S5/CrealityV1"
 branch = "bugfix-2.0.x"
 URL = "https://raw.githubusercontent.com/MarlinFirmware/Configurations/" + branch + path
 
+
 #####################################################
 ##### WEB REQUEST SETUP
 #####################################################
@@ -94,15 +115,6 @@ session.mount(URL,api_adapter)
 logging.basicConfig(filename=logfile, filemode='a', format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 logger=logging.getLogger()
 logger.setLevel(logging.INFO)   #Set the initial logger threshold (values: INFO WARN ERROR CRITICAL DEBUG)
-
-# example log messages
-#logger.debug("This is just a harmless debug message") 
-#logger.info("This is just an information for you") 
-#logger.warning("OOPS!!!Its a Warning") 
-#logger.error("Have you try to divide a number by zero") 
-#logger.critical("The Internet is not working....") 
-#logger.exception("This kicks out a trace for exceptions")
-
 
 #####################################################
 ##### FUNCTIONS - MESSAGING & LOGGING
@@ -178,7 +190,6 @@ def intro():
 def outro():
     ExitStageLeft(0,"Done")
 
-# https://codereview.stackexchange.com/questions/214935/python-3-6-function-to-ask-for-a-multiple-choice-answer
 def multi_choice_question(options: list,msg,title):
     while True:
         print()
@@ -561,7 +572,7 @@ def getExampleFiles():
 def getWebFile(URL):
     global attempt
     global version
-    oktogo = True
+    oktogo = "abort"
     errorCode = 0
 
     # request headers
@@ -581,7 +592,7 @@ def getWebFile(URL):
             logger.exception(t)
             logger.critical('Query Timed Out')
         except HTTPError as e:
-            if errorCode == 404: ### TEST THIS 404 CODE WITH A BAD FILE IN FILES ARRAY ###
+            if errorCode == 404:
                 Message_Warning("   Configuration Example File Not Found at " + URL)
                 Message_Warning("   Confirm file exists. Adjust JSON Configuration if file is invalid.")
                 if mode == "interactive":
@@ -646,6 +657,7 @@ def getWebFile(URL):
 
 # find directive to see if it exists
 def findDirective(directive,test_str):
+    logger.debug("findDirective()")
     pattern = "^(\s*)(\/\/)?(\s*)#define(\s*)" + directive + "(\s)"
     found = False
     matches = re.finditer(pattern, test_str, re.MULTILINE)
@@ -655,6 +667,7 @@ def findDirective(directive,test_str):
 
 # find comment for a directive, if there is one
 def getDirective(directive,test_str):
+    logger.debug("getDirective())")
     reg_pre = "^(\s*?)(#define "
     reg_post = "\s+)(.*?)(\s*\/\/.*)?$"
     pattern = reg_pre + directive + reg_post
@@ -668,6 +681,96 @@ def getDirective(directive,test_str):
 
     return results
 
+# inject marlin-configurator.py header into every file in the list
+def injectMetaHeader():
+    logger.debug("injectMetaData())")
+    # globals where the settings are stored
+    global version
+    global repourl
+    global JSONFile
+    global importpath
+    global targetdir
+    global preferargs
+    global silent
+    global createdir
+    global useconfig
+    global missing
+    global mode
+    global prefer
+    global validate
+    global files
+    global path
+    global branch
+    global URL
+
+    # local variables
+    today = date.today()
+    year = today.year
+    data = ""
+    metaheader = "/**\n"
+    metaheader += " * marlin-configurator.py v" + str(version) + "\n"
+    metaheader += " * Copyright (c) " + str(year) + " DevPeeps [" + str(repourl) + "]\n"
+    metaheader += " * \n"
+    metaheader += " *                [PATHS]\n"
+    metaheader += " *    importpath: '" + importpath + "'\n"
+    metaheader += " *     targetdir: '" + targetdir + "'\n"
+    metaheader += " *      JSONFile: '" + JSONFile + "'\n"
+    metaheader += " * \n"
+    metaheader += " *                [SOURCE FILES] \n"
+    metaheader += " *           url: '" + URL + "' \n"
+    metaheader += " *        branch: " + branch + " \n"
+    metaheader += " *          path: " + path + " \n"
+    metaheader += " *         files: " + str(files) + " \n"
+    metaheader += " * \n"
+    metaheader += " *                [SETTINGS] \n"
+    metaheader += " *          mode: " + mode + " \n"
+    metaheader += " *       missing: " + missing + " \n"
+    metaheader += " *        prefer: " + prefer  + " \n"
+    metaheader += " *     createdir: " + str(createdir)  + " \n"
+    metaheader += " *        silent: " + str(silent) + " \n"
+    metaheader += " */\n\n"
+    
+    logger.info(metaheader) # may as well put this info in the log :-)
+
+    # open each file in the files array and attemptm to inject the header at the top
+    # silently fails if the file is not valid
+    try:
+        for fl in files:
+            file = targetdir + "/Marlin/" + fl
+            Message_Config("   Injecting Meta Header into " + file)
+            if isFile(file):
+                fh = open(file, "r",encoding="utf8")
+                data = fh.read()
+                fh.close()
+                data = metaheader + data
+                fh = open(file, "w",encoding="utf8")
+                fh.write(data)
+                fh.close()
+    except IOError as ioe: ##error message
+        Message_Exception("IOError Occured in injectMetaData",ioe)
+        print(ioe)
+    except Exception as e: ##error message
+        Message_Exception("Exception Occured in injectMetaData",e)
+        print(e)
+
+# add a missing directive
+def addDirective(directive,file):
+    logger.debug("addDirective()")
+    Message_Config('   Adding Directive ' + directive + ' to ' + file)
+    global version
+    
+    # open the files in append mode, save the change, and close
+    try:
+        f = open(file, "a",encoding="utf8")
+        f.write("\n#define " + directive + "  // added by marlin-configurator v" + version)
+        f.close()
+    except IOError as ioe: ##error message
+        Message_Exception("IOError Occured in addDirective",ioe)
+        print(ioe)
+    except Exception as e: ##error message
+        Message_Exception("Exception Occured in addDirective",e)
+        print(e)
+
 # enable a directive
 def enableDirectives():
     logger.debug("enableDirectives()")
@@ -675,7 +778,11 @@ def enableDirectives():
     global options_enable
     global f_config
     global f_config_adv
+    global mode
+    global version
     exists = False
+    oktogo = "abort"
+    file = "Configuration.h"
 
     try:
         # open the two config files, read them, and close them
@@ -711,7 +818,28 @@ def enableDirectives():
                 data2 = data2.replace(disabled, enabled)
                 #data2 = re.sub(pattern, enabled, data2, re.MULTILINE)
             if exists == False:
-                Message_Warning("      " + directive + " not found. Skipping.")
+                if mode == "interactive":
+                    # interactive mode
+                    Message_Warning("      " + directive + " not found.")
+                    oktogo = multi_choice_question(['abort','skip','add'],'Abort, Skip, or Add ? ','Missing Directive')    
+                    if oktogo == "abort":
+                        ExitStageLeft(404,"Missing Configuration File. User Cancelled.")
+                    if oktogo == "add":
+                        file = multi_choice_question(['Configuration.h','Configuration_adv.h'],'Which file to add it to ? ','Add Missing Directive')
+                        if file == "Configuration.h":
+                            data1 += "\n" + "#define " + directive + "  // added by marlin-configurator v" + version
+                        if file == "Configuration_adv.h":
+                            data2 += "\n" + "#define " + directive + "  // added by marlin-configurator v" + version
+                    if oktogo == "skip":
+                        Message_Warning("      " + directive + " not found. User Skipped.")
+                else:
+                    # batch mode
+                    if missing == "skip":
+                        Message_Warning("      " + directive + " not found. Batch Mode. Missing is set to 'skip'. Skipping.")
+                    else:
+                        Message_Warning("      " + directive + " not found. Batch Mode. Missing it set to 'add'. Adding to both files.")
+                        data1 += "\n" + "#define " + directive + "  // added by marlin-configurator v" + version
+                        data2 += "\n" + "#define " + directive + "  // added by marlin-configurator v" + version
             exists = False
 
         # reopen the files in write mode, save the changes, and close them
@@ -768,7 +896,7 @@ def disableDirectives():
                     Message_Config(msg)                
                 data2 = data2.replace(enabled,disabled)
             if exists == False:
-                Message_Warning("      " + directive + " not found. Skipping.")
+                Message_Warning("      " + directive + " not found. Effectively the same as disabled. Skipping.")
             exists = False
 
         # reopen the files in write mode, save the changes, and close them
@@ -792,7 +920,11 @@ def updateValues():
     global options_values
     global f_config
     global f_config_adv
+    global mode
+    global version
     exists = False
+    oktogo = "abort"
+    file = "Configuration.h"
 
     try:
         # open the two config files, read them, and close them
@@ -843,8 +975,28 @@ def updateValues():
                 data2 = re.sub(pattern,subst,data2,0,re.MULTILINE)
             
             if exists == False:   
-                Message_Warning("      " + directive + " not found. Skipping.")
-            
+                if mode == "interactive":
+                    # interactive mode
+                    Message_Warning("      " + directive + " not found.")
+                    oktogo = multi_choice_question(['abort','skip','add'],'Abort, Skip, or Add ? ','Missing Directive')    
+                    if oktogo == "abort":
+                        ExitStageLeft(404,"Missing Configuration File. User Cancelled.")
+                    if oktogo == "add":
+                        file = multi_choice_question(['Configuration.h','Configuration_adv.h'],'Which file to add it to ? ','Add Missing Directive')
+                        if file == "Configuration.h":
+                            data1 += "\n" + "#define " + directive + " " + value + "  // added by marlin-configurator v" + version
+                        if file == "Configuration_adv.h":
+                            data2 += "\n" + "#define " + directive + " " + value + "  // added by marlin-configurator v" + version
+                    if oktogo == "skip":
+                        Message_Warning("      " + directive + " not found. User Skipped.")
+                else:
+                    # batch mode
+                    if missing == "skip":
+                        Message_Warning("      " + directive + " not found. Batch Mode. Missing is set to 'skip'. Skipping.")
+                    else:
+                        Message_Warning("      " + directive + " not found. Batch Mode. Missing it set to 'add'. Adding to both files.")
+                        data1 += "\n" + "#define " + directive + " " + value + "  // added by marlin-configurator v" + version
+                        data2 += "\n" + "#define " + directive + " " + value + "  // added by marlin-configurator v" + version
             exists = False
 
         # reopen the files in write mode, save the changes, and close them
@@ -974,6 +1126,9 @@ def main(args):
 
     ##### Download Example Files from the Internet (if not using a local path)
     getExampleFiles()
+
+    ##### Inject our header into the files to leave a footprint and help url
+    injectMetaHeader()
 
     ##### Configuration Directives from JSON Configuration File
     getJSONOptions()
