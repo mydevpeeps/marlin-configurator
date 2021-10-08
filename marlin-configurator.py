@@ -368,17 +368,18 @@ def getDefaults():
     # defaults to be used for comparison during setting resolutions
     # pull defaults from json file
     logger.debug("getJSONSettings()")
-    print()
     global defaults
     Message_Header("Processing Default Settings from inc/defaults.json")
     try:
          if isFile('inc/defaults.json'):
             with open('inc/defaults.json',encoding="utf8") as r:
                 defaults = json.load(r)
-                #for key in defaults:
-                #    directive = str(key)
-                #    value = str(options_values[key])
-                #    Message_Config("   " + directive + " = " + value)
+                msg = " | "
+                for key in defaults:
+                    directive = str(key)
+                    value = defaults[key]
+                    msg += directive + " : " + str(value) + " | "
+                Message_Config(msg)
     except IOError as ioe: ##error message
         Message_Exception("IOError Occured in getDefaults",ioe)
         print(ioe)
@@ -559,11 +560,20 @@ def getExampleFiles():
 # gets one file at a time from the internet
 def getWebFile(URL):
     global attempt
+    global version
+    oktogo = True
     errorCode = 0
+
+    # request headers
+    HEADERS = {
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Cache-Control': 'no-cache',
+        'User-Agent': 'Marlin Configurator v' + version
+    }
 
     for rt in range(1,retries+1):
         try: 
-            r = session.get(url = URL, verify=sslverify, timeout=(ctimeout,dtimeout))
+            r = session.get(url = URL, headers = HEADERS, verify=sslverify, timeout=(ctimeout,dtimeout))
             r.encoding = 'utf-8'
             r.raise_for_status()
         except Timeout as t:
@@ -571,7 +581,18 @@ def getWebFile(URL):
             logger.exception(t)
             logger.critical('Query Timed Out')
         except HTTPError as e:
-            errorCode = r.status_code
+            if errorCode == 404: ### TEST THIS 404 CODE WITH A BAD FILE IN FILES ARRAY ###
+                Message_Warning("   Configuration Example File Not Found at " + URL)
+                Message_Warning("   Confirm file exists. Adjust JSON Configuration if file is invalid.")
+                if mode == "interactive":
+                    oktogo = multi_choice_question(['abort','continue'],'Continue or Abort ? ','Missing Source File')    
+                    if oktogo == "abort":
+                        ExitStageLeft(404,"Missing Configuration File. User Cancelled.")
+                    else:
+                        attempt = 1
+                        break
+            else:
+                errorCode = r.status_code
             logger.critical('Query Error')
             logger.error("Received Response code " + str(errorCode) + " from "  + str(URL))
             logger.exception(e)
