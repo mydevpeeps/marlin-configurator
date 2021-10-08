@@ -1155,8 +1155,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Builds Configuration Files from Marlin Examples', conflict_handler='resolve', fromfile_prefix_chars='@')
 
     # files
-    parser.add_argument('--importpath', type=str, metavar="SOURCE_CONFIG_PATH", help='Import a local config example path',default='None')
     parser.add_argument('--config', type=str, metavar="JSON_CONFIG_FILE", help='JSON Configuration File',default='None',required=True)
+    parser.add_argument('--importpath', type=str, metavar="SOURCE_CONFIG_PATH", help='Import a local config example path',default='None')
     parser.add_argument('--target', type=str, metavar="MARLIN_ROOT_DIR", help='The directory in which the files will be saved. Default is current directory. Usually this is the directory platformio.ini is in.',default='None')
     
     # boolean
